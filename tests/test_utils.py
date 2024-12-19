@@ -1,12 +1,37 @@
 import pytest
 
 from pydantic_sweep.utils import (
+    _normalize_path,
     config_product,
     config_zip,
     field,
     merge_configs,
     paths_to_dict,
 )
+
+
+def test_normalize_path():
+    path = ("a", "A_", "b0", "__C")
+    assert _normalize_path(path) == path
+    assert _normalize_path("a.A_.b0.__C") == path
+
+    with pytest.raises(ValueError):
+        _normalize_path("a,b")
+    with pytest.raises(ValueError):
+        _normalize_path(".")
+    with pytest.raises(ValueError):
+        _normalize_path("a.b.")
+    with pytest.raises(ValueError):
+        _normalize_path("a..b")
+    with pytest.raises(ValueError):
+        _normalize_path(".a.b")
+
+    with pytest.raises(ValueError):
+        _normalize_path(("a", "2"))
+    with pytest.raises(ValueError):
+        _normalize_path(("a.b",))
+    with pytest.raises(ValueError):
+        _normalize_path(("0a.b",))
 
 
 class TestPathsToDict:
@@ -19,23 +44,23 @@ class TestPathsToDict:
         with pytest.raises(ValueError):
             paths_to_dict([("a", 1), ("a", 1)])
         with pytest.raises(ValueError):
-            paths_to_dict([("a", "a", 1), ("a", "a", 1)])
+            paths_to_dict([("a.a", 1), ("a.a", 1)])
 
     def test_parent_overwrite(self):
         with pytest.raises(ValueError):
-            paths_to_dict([("a", "a", 5), ("a", 6)])
+            paths_to_dict([("a.a", 5), ("a", 6)])
         with pytest.raises(ValueError):
-            paths_to_dict([("a", "a", "a", 5), ("a", 6)])
+            paths_to_dict([("a.a.a", 5), ("a", 6)])
         with pytest.raises(ValueError):
-            paths_to_dict([("a", "a", "a", 5), ("a", "a", 6)])
+            paths_to_dict([("a.a.a", 5), ("a.a", 6)])
 
     def test_child_overwrite(self):
         with pytest.raises(ValueError):
-            paths_to_dict([("a", 6), ("a", "a", 5)])
+            paths_to_dict([("a", 6), ("a.a", 5)])
         with pytest.raises(ValueError):
-            paths_to_dict([("a", 6), ("a", "a", "a", 5)])
+            paths_to_dict([("a", 6), ("a.a", 5)])
         with pytest.raises(ValueError):
-            paths_to_dict([("a", "a", 6), ("a", "a", "a", 5)])
+            paths_to_dict([("a.a", 6), ("a.a.a", 5)])
 
 
 def test_merge_dicts():
@@ -73,12 +98,3 @@ def test_config_zip():
     # Same value
     with pytest.raises(ValueError):
         config_zip(field("a", [1, 2]), field("a", [3, 4]))
-
-
-# def test_flatten_dict():
-#     d = dict(a=1, b=dict(a=dict(c=6, a=5), x=3), y=99)
-#     d_flat = flatten_dict(d)
-
-#     assert d_flat == {"a": 1, "b.a.c": 6, "b.a.a": 5, "b.x": 3, "y": 99}
-#     d_recon = unflatten_dicts(d_flat)
-#     assert d == d_recon
