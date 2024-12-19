@@ -1,13 +1,14 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from typing import Any, TypeVar, overload
 
 import pydantic
 
-from pydantic_sweep.utils import paths_to_dict
+from pydantic_sweep.utils import Path, paths_to_dict
 
 __all__ = [
     "BaseModel",
     "check_model",
+    "initialize",
 ]
 
 ModelType = TypeVar("ModelType", bound=pydantic.BaseModel)
@@ -67,7 +68,7 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
-    path: str | Sequence[str],
+    path: Path,
 ) -> list[dict[str, Any]]:
     pass
 
@@ -84,7 +85,7 @@ def initialize(
 def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
-    path: str | Sequence[str] | None = None,
+    path: Path | None = None,
 ) -> list[dict[str, Any]] | list[ModelType]:
     """Instantiate the models with the given parameters.
 
