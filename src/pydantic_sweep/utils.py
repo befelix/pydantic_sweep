@@ -3,6 +3,8 @@ import re
 from collections.abc import Iterable, Iterator
 from typing import Any, TypeVar
 
+from pydantic_sweep.types import Config, Path, StrictPath
+
 __all__ = [
     "dict_to_pathvalues",
     "merge_configs",
@@ -10,7 +12,6 @@ __all__ = [
     "pathvalues_to_dict",
 ]
 
-from pydantic_sweep.types import Config, Path, StrictPath
 
 T = TypeVar("T")
 
