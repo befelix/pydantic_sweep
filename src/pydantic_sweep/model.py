@@ -1,9 +1,14 @@
+import itertools
+import typing
 from collections.abc import Iterable
+from functools import partial
 from typing import Any, TypeVar, overload
 
+import more_itertools
 import pydantic
 
-from pydantic_sweep.utils import Path, paths_to_dict
+from pydantic_sweep.types import Config, ModelType, Path
+from pydantic_sweep.utils import merge_configs, normalize_path, pathvalues_to_dict
 
 __all__ = [
     "BaseModel",
@@ -11,7 +16,7 @@ __all__ = [
     "initialize",
 ]
 
-ModelType = TypeVar("ModelType", bound=pydantic.BaseModel)
+T = TypeVar("T")
 
 
 class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
@@ -116,4 +121,143 @@ def initialize(
         return result
     else:
         path = tuple(path.split(".")) if isinstance(path, str) else tuple(path)
-        return [paths_to_dict([(path, res)]) for res in result]
+        return [pathvalues_to_dict([(path, res)]) for res in result]
+
+
+def field(path: Path, values: Iterable) -> list[Config]:
+    """Assign various values to a field in a pydantic Model.
+
+    Parameters
+    ----------
+    path :
+        The path to the key in the model. Can either be a dot-separated string of
+        keys (e.g., ``my.key``) or a tuple of keys (e.g., ``('my', 'key')``.
+    values :
+        The different values that should be assigned to the field.
+
+    Returns
+    -------
+    A list of partial configuration dictionaries that can be passed to the pydantic
+    model.
+
+    Examples
+    --------
+    >>> import pydantic_sweep as ps
+
+    >>> class Sub(ps.BaseModel):
+    ...     x: int = 5
+    ...     y: int = 6
+
+    >>> class Model(ps.BaseModel):
+    ...     sub: Sub = Sub()
+    ...     seed: int = 5
+
+    >>> configs = ps.field("sub.x", [10, 20])
+    >>> ps.initialize(Model, configs)
+    [Model(sub=Sub(x=10, y=6), seed=5), Model(sub=Sub(x=20, y=6), seed=5)]
+
+    """
+    path = normalize_path(path)
+    if isinstance(values, str):
+        raise ValueError("values must be iterable, but got a string")
+
+    return [pathvalues_to_dict([(path, value)]) for value in values]
+
+
+class Combiner(typing.Protocol[T]):
+    """A function that yields tuples of items."""
+
+    def __call__(self, *configs: Iterable[T]) -> Iterable[tuple[T, ...]]:
+        pass
+
+
+class Chainer(typing.Protocol[T]):
+    """A function that chains iterables together."""
+
+    def __call__(self, *configs: Iterable[T]) -> Iterable[T]:
+        pass
+
+
+def config_combine(
+    *configs: Iterable[Config],
+    combiner: Combiner | None = None,
+    chainer: Chainer | None = None,
+) -> list[Config]:
+    """Flexible combination of configuration dictionaries.
+
+    In contrast to the more specific functions below, this allows you to flexibly use
+    existing functions from ``itertools`` in order to create new combiners. All
+    existing combiners build on top of this function.
+
+    The output of this function is a valid input to both itself and other combiner
+    functions.
+
+    Parameters
+    ----------
+    configs :
+        The configurations we want to combine.
+    combiner :
+        A function that takes as input multiple iterables and yields tuples.
+        For example: ``itertools.product``.
+    chainer :
+        A function that takes as input multiple iterables and yields a single new
+        iterable. For example: ``itertools.chain``.
+
+    Returns
+    -------
+    A list of new configuration objects after combining or chaining.
+    """
+    if combiner is not None:
+        if chainer is not None:
+            raise ValueError("Can only provide `combiner` or `chainer`, not both")
+        return [merge_configs(*combo) for combo in combiner(*configs)]
+    elif chainer is not None:
+        return list(chainer(*configs))
+    else:
+        raise ValueError("Must provide one of `single_out` or `multi_out`")
+
+
+def config_product(*configs: Iterable[Config]) -> list[Config]:
+    """A product of existing configuration dictionaries.
+
+    This is the most common way of constructing searches. It constructs the product
+    of the inputs.
+
+    >>> config_product(field("a", [1, 2]), field("b", [3, 4]))
+    [{'a': 1, 'b': 3}, {'a': 1, 'b': 4}, {'a': 2, 'b': 3}, {'a': 2, 'b': 4}]
+
+    The output of this function is a valid input to both itself and other combiner
+    functions.
+    """
+    return config_combine(*configs, combiner=itertools.product)
+
+
+def config_zip(*configs: Iterable[Config]) -> list[Config]:
+    """Return the zip-combination of configuration dictionaries.
+
+    >>> config_zip(field("a", [1, 2]), field("b", [3, 4]))
+    [{'a': 1, 'b': 3}, {'a': 2, 'b': 4}]
+    """
+    safe_zip = partial(zip, strict=True)
+    return config_combine(*configs, combiner=safe_zip)
+
+
+def config_chain(*configs: Iterable[Config]) -> list[Config]:
+    """Chain configuration dictionaries behind each other.
+
+    >>> config_chain(field("a", [1, 2]), field("b", [3, 4]))
+    [{'a': 1}, {'a': 2}, {'b': 3}, {'b': 4}]
+    """
+    return config_combine(*configs, chainer=itertools.chain)
+
+
+def config_roundrobin(*configs: Iterable[Config]) -> list[Config]:
+    """Interleave the configuration dictionaries.
+
+    This is the same behavior as `config_chain`, but instead of chaining them behind
+    each other, takes from the different iterables in turn.
+
+    >>> config_roundrobin(field("a", [1, 2, 3]), field("b", [3, 4]))
+    [{'a': 1}, {'b': 3}, {'a': 2}, {'b': 4}, {'a': 3}]
+    """
+    return config_combine(*configs, chainer=more_itertools.roundrobin)

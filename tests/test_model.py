@@ -1,7 +1,16 @@
 import pydantic
 import pytest
 
-from pydantic_sweep.model import BaseModel, check_model, initialize
+from pydantic_sweep.model import (
+    BaseModel,
+    check_model,
+    config_chain,
+    config_product,
+    config_roundrobin,
+    config_zip,
+    field,
+    initialize,
+)
 
 
 def test_BaseModel():
@@ -92,3 +101,43 @@ class TestFinalize:
         assert m1.sub is not m2.sub
         m1.sub.x = 10
         assert m2.sub.x == 5
+
+
+def test_config_product():
+    res = config_product(field("a", [1, 2]), field("b", [3, 4]))
+    expected = [dict(a=1, b=3), dict(a=1, b=4), dict(a=2, b=3), dict(a=2, b=4)]
+    assert res == expected
+
+    with pytest.raises(ValueError):
+        config_product(field("a", [1]), field("a", [2]))
+
+
+def test_config_zip():
+    res = config_zip(field("a", [1, 2]), field("b", [3, 4]))
+    assert res == [dict(a=1, b=3), dict(a=2, b=4)]
+
+    # Different lengths
+    with pytest.raises(ValueError):
+        config_zip(field("a", [1, 2]), field("b", [3]))
+
+    # Same value
+    with pytest.raises(ValueError):
+        config_zip(field("a", [1, 2]), field("a", [3, 4]))
+
+
+def test_config_chain():
+    res = config_chain(field("a", [1, 2]), field("b", [3, 4]))
+    assert res == [dict(a=1), dict(a=2), dict(b=3), dict(b=4)]
+
+    # Same keys should not cause conflicts here
+    res = config_chain(field("a", [1]), field("b", [2]))
+    assert res == [dict(a=1), dict(b=2)]
+
+
+def test_config_roundrobin():
+    res = config_roundrobin(field("a", [1, 2]), field("b", [3, 4]))
+    assert res == [dict(a=1), dict(b=3), dict(a=2), dict(b=4)]
+
+    # Same keys should not cause conflicts here
+    res = config_chain(field("a", [1]), field("b", [2]))
+    assert res == [dict(a=1), dict(b=2)]

@@ -1,11 +1,13 @@
-from .model import BaseModel, check_model, initialize
-from .utils import (
+from .model import (
+    BaseModel,
+    check_model,
     config_chain,
     config_combine,
     config_product,
     config_roundrobin,
     config_zip,
     field,
+    initialize,
 )
 
 __all__ = [
