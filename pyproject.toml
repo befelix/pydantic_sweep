@@ -36,6 +36,7 @@ filterwarnings = [
 [tool.mypy]
 ignore_missing_imports = true
 warn_unused_configs = true
+allow_redefinition = true
 files = ["src"]
 
 [tool.ruff]

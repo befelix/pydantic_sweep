@@ -1,12 +1,14 @@
 import itertools
-from collections.abc import Callable, Iterable, Iterator, Sequence
+import typing
+from collections.abc import Iterable, Iterator
 from functools import partial
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, TypeVar
 
 import more_itertools
 
 Path: TypeAlias = tuple[str, ...]
 Config: TypeAlias = dict[str, Any]
+T = TypeVar("T")
 
 
 def _path_to_str(p: Path, /) -> str:
@@ -78,18 +80,30 @@ def field(path: str | Path, values: Iterable) -> list[Config]:
     if isinstance(values, str):
         raise ValueError("values must be iterable, but got a string")
 
-    if isinstance(path, str):
-        path = path.split(".")
-    path = tuple(path)
+    path: tuple[str, ...] = (
+        tuple(path.split(".")) if isinstance(path, str) else tuple(path)
+    )
     return [paths_to_dict([(path, value)]) for value in values]
+
+
+class Combiner(typing.Protocol, typing.Generic[T]):
+    """A function that yields tuples of items."""
+
+    def __call__(self, *configs: Iterable[T]) -> Iterable[tuple[T, ...]]:
+        pass
+
+
+class Chainer(typing.Protocol, typing.Generic[T]):
+    """A function that chains iterables together."""
+
+    def __call__(self, *configs: Iterable[T]) -> Iterable[T]:
+        pass
 
 
 def config_combine(
     *configs: list[Config],
-    combiner: Callable[[Iterable, ...], Sequence]
-    | type[itertools.product]
-    | None = None,
-    chainer: Callable[[Iterable, ...], Any] | type[itertools.chain] | None = None,
+    combiner: Combiner | None = None,
+    chainer: Chainer | None = None,
 ) -> list[Config]:
     if combiner is not None:
         if chainer is not None:

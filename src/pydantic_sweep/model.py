@@ -68,7 +68,7 @@ def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
     path: str | Sequence[str],
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     pass
 
 
@@ -76,7 +76,7 @@ def initialize(
 def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
-    path: None,
+    path: None = None,
 ) -> list[ModelType]:
     pass
 
@@ -85,7 +85,7 @@ def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
     path: str | Sequence[str] | None = None,
-) -> list[ModelType]:
+) -> list[dict[str, Any]] | list[ModelType]:
     """Instantiate the models with the given parameters.
 
     Parameters
@@ -103,8 +103,8 @@ def initialize(
     check_model(model)
 
     if isinstance(model, pydantic.BaseModel):
-        result = [
-            model.model_validate(model.model_copy(update=parameter).model_dump())
+        result: list[ModelType] = [
+            model.model_validate(model.model_copy(update=parameter).model_dump())  # type: ignore[misc]
             for parameter in parameters
         ]
     else:
@@ -114,8 +114,5 @@ def initialize(
     if path is None:
         return result
     else:
-        if isinstance(path, str):
-            path = path.split(".")
-
-        path = tuple(path)
+        path = tuple(path.split(".")) if isinstance(path, str) else tuple(path)
         return [paths_to_dict([(path, res)]) for res in result]
