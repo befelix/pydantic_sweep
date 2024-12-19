@@ -3,6 +3,7 @@ import pytest
 
 from pydantic_sweep.model import (
     BaseModel,
+    DefaultValue,
     check_model,
     config_chain,
     config_product,
@@ -33,7 +34,7 @@ def test_BaseModel():
         Model(x=5, y=6)
 
 
-def test_assert_config():
+def test_check_model():
     class A(pydantic.BaseModel):
         x: int
 
@@ -55,6 +56,36 @@ def test_assert_config():
 
     check_model(Model2)
     check_model(Model2(x=5, a=dict(x=6)))
+
+
+class TestField:
+    def test_invalid_path(self):
+        with pytest.raises(ValueError):
+            field("a-b", [1])
+
+    def test_basic(self):
+        assert field("a", []) == []
+        assert field("a", [1, 2]) == [dict(a=1), dict(a=2)]
+        assert field("a.b", [1]) == [dict(a=dict(b=1))]
+        assert field(("a", "b"), [1]) == [dict(a=dict(b=1))]
+
+    def test_default(self):
+        assert field("a", [DefaultValue]) == [dict()]
+
+        class Model(BaseModel):
+            x: int = 5
+
+        res = initialize(Model, field("x", [1, DefaultValue, 2]))
+        assert res[0].x == 1
+        assert res[1].x == 5
+        assert res[2].x == 2
+
+        with pytest.raises(TypeError):
+            DefaultValue()
+        with pytest.raises(TypeError):
+
+            class Test(DefaultValue):
+                pass
 
 
 class TestFinalize:

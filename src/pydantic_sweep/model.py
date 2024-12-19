@@ -12,6 +12,7 @@ from pydantic_sweep.utils import merge_configs, normalize_path, pathvalues_to_di
 
 __all__ = [
     "BaseModel",
+    "DefaultValue",
     "check_model",
     "config_chain",
     "config_combine",
@@ -29,6 +30,16 @@ class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
     """Base model with validation enabled by default."""
 
     pass
+
+
+class DefaultValue:
+    """Indicator class for a default value in the `field` method."""
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("This is a sentinel value and not meant to be instantiated.")
+
+    def __init_subclass__(cls, **kwargs):
+        raise TypeError("This is a sentinel value and not meant to be subclassed.")
 
 
 def _check_model_config(model, /):
@@ -139,7 +150,9 @@ def field(path: Path, values: Iterable) -> list[Config]:
         The path to the key in the model. Can either be a dot-separated string of
         keys (e.g., ``my.key``) or a tuple of keys (e.g., ``('my', 'key')``.
     values :
-        The different values that should be assigned to the field.
+        The different values that should be assigned to the field. Note that the
+        `DefaultValue` class has a special meaning, since it will be effectively
+        ignored, allowing it to be kept to the default model.
 
     Returns
     -------
@@ -167,7 +180,10 @@ def field(path: Path, values: Iterable) -> list[Config]:
     if isinstance(values, str):
         raise ValueError("values must be iterable, but got a string")
 
-    return [pathvalues_to_dict([(path, value)]) for value in values]
+    return [
+        pathvalues_to_dict([(path, value)]) if value is not DefaultValue else dict()
+        for value in values
+    ]
 
 
 class Combiner(typing.Protocol[T]):
