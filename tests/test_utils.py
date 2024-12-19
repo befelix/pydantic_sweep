@@ -2,7 +2,9 @@ import pytest
 
 from pydantic_sweep.utils import (
     _normalize_path,
+    config_chain,
     config_product,
+    config_roundrobin,
     config_zip,
     field,
     merge_configs,
@@ -98,3 +100,21 @@ def test_config_zip():
     # Same value
     with pytest.raises(ValueError):
         config_zip(field("a", [1, 2]), field("a", [3, 4]))
+
+
+def test_config_chain():
+    res = config_chain(field("a", [1, 2]), field("b", [3, 4]))
+    assert res == [dict(a=1), dict(a=2), dict(b=3), dict(b=4)]
+
+    # Same keys should not cause conflicts here
+    res = config_chain(field("a", [1]), field("b", [2]))
+    assert res == [dict(a=1), dict(b=2)]
+
+
+def test_config_roundrobin():
+    res = config_roundrobin(field("a", [1, 2]), field("b", [3, 4]))
+    assert res == [dict(a=1), dict(b=3), dict(a=2), dict(b=4)]
+
+    # Same keys should not cause conflicts here
+    res = config_chain(field("a", [1]), field("b", [2]))
+    assert res == [dict(a=1), dict(b=2)]
