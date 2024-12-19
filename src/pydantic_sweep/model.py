@@ -13,6 +13,12 @@ from pydantic_sweep.utils import merge_configs, normalize_path, pathvalues_to_di
 __all__ = [
     "BaseModel",
     "check_model",
+    "config_chain",
+    "config_combine",
+    "config_product",
+    "config_roundrobin",
+    "config_zip",
+    "field",
     "initialize",
 ]
 
