@@ -1,0 +1,52 @@
+[project]
+name = "pydantic-sweep"
+version = "0.1.0"
+description = "Programmatic parameter sweeps for pydantic."
+readme = "README.md"
+authors = [
+    { name = "Felix Berkenkamp" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "more-itertools>=10.5.0",
+    "pydantic>=2.10.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest-sugar>=1.0.0",
+    "pytest>=8.3.4",
+    "ruff>=0.8.3",
+    "mypy[mypyc]>=1.13.0",
+    "ipython>=8.30.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["src", "tests"]
+minversion = 8.3
+addopts = "-p 'no:legacypath' --doctest-modules"
+filterwarnings = [
+    "error",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+warn_unused_configs = true
+files = ["src"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E", # Pycodestyle Errors
+    "F", # Pyflakes
+    "UP", # Auto-upgrading of new Python features
+    "I", # Sort imports
+    "RUF", # Rules from ruff
+    "PERF", # Performance issues
+]
