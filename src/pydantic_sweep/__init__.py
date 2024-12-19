@@ -1,5 +1,6 @@
 from .model import (
     BaseModel,
+    DefaultValue,
     check_model,
     config_chain,
     config_combine,
@@ -12,6 +13,7 @@ from .model import (
 
 __all__ = [
     "BaseModel",
+    "DefaultValue",
     "check_model",
     "config_chain",
     "config_combine",
