@@ -1,0 +1,65 @@
+name: CI Tests
+on: [push, pull_request]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-low:
+    name: "linux-low"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "~=0.5.10"
+
+    - name: Install
+      run: uv sync --python 3.10 --resolution "lowest-direct"
+
+    - name: Pytest
+      run: uv run pytest
+
+  linux-high:
+    name: "linux-high"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "~=0.5.10"
+
+      - name: Ruff
+        run: |
+          uv run ruff format --check
+          uv run ruff check
+
+      - name: Mypy
+        run: uv run mypy
+
+      - name: Pytest
+        run: uv run pytest
+
+  windows:
+    name: "windows"
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "~=0.5.10"
+
+      - name: Pytest
+        run: uv run pytest

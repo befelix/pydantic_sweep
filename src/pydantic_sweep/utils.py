@@ -121,7 +121,7 @@ def config_product(*configs: list[Config]) -> list[Config]:
 
 def config_zip(*configs: list[Config]) -> list[Config]:
     safe_zip = partial(zip, strict=True)
-    return config_combine(*configs, chainer=safe_zip)
+    return config_combine(*configs, combiner=safe_zip)
 
 
 def config_chain(*configs: list[Config]) -> list[Config]:
