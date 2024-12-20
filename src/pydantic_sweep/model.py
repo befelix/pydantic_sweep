@@ -176,7 +176,7 @@ def field(path: Path, values: Iterable) -> list[Config]:
     [Model(sub=Sub(x=10, y=6), seed=5), Model(sub=Sub(x=20, y=6), seed=5)]
 
     """
-    path = normalize_path(path)
+    path = normalize_path(path, check_keys=True)
     if isinstance(values, str):
         raise ValueError("values must be iterable, but got a string")
 

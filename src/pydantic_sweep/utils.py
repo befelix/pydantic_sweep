@@ -29,8 +29,16 @@ def _path_to_str(p: Path, /) -> str:
     return p if isinstance(p, str) else ".".join(p)
 
 
-def normalize_path(path: Path, /) -> StrictPath:
-    """Normalize a path to a tuple of strings."""
+def normalize_path(path: Path, /, *, check_keys: bool = False) -> StrictPath:
+    """Normalize a path to a tuple of strings.
+
+    Parameters
+    ----------
+    path :
+        The path to be normalized.
+    check_keys :
+        If ``True``, also check each individual key in a tuple path.
+    """
     if isinstance(path, str):
         if not re.fullmatch(_STR_PATH_PATTERN, path):
             raise ValueError(
@@ -39,11 +47,12 @@ def normalize_path(path: Path, /) -> StrictPath:
             )
         return tuple(path.split("."))
     else:
-        for p in path:
-            if not re.fullmatch(_STR_KEY_PATTERN, p):
-                raise ValueError(
-                    f"Paths can only contain letters and underscores, got {p}."
-                )
+        if check_keys:
+            for p in path:
+                if not re.fullmatch(_STR_KEY_PATTERN, p):
+                    raise ValueError(
+                        f"Paths can only contain letters and underscores, got {p}."
+                    )
         return tuple(path)
 
 
