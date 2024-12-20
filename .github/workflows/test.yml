@@ -48,6 +48,9 @@ jobs:
       - name: Pytest
         run: uv run pytest
 
+      - name: Documentation
+        run: uv run --group doc sphinx-build -j 2 docs docs/_build
+
   windows:
     name: "windows"
     runs-on: windows-latest
