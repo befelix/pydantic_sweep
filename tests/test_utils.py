@@ -24,11 +24,11 @@ def test_normalize_path():
         normalize_path(".a.b")
 
     with pytest.raises(ValueError):
-        normalize_path(("a", "2"))
+        normalize_path(("a", "2"), check_keys=True)
     with pytest.raises(ValueError):
-        normalize_path(("a.b",))
+        normalize_path(("a.b",), check_keys=True)
     with pytest.raises(ValueError):
-        normalize_path(("0a.b",))
+        normalize_path(("0a.b",), check_keys=True)
 
 
 class TestPathsToDict:
