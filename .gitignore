@@ -16,3 +16,5 @@ wheels/
 .idea
 .vscode
 
+# docs
+docs/_build
