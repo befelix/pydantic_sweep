@@ -1,9 +1,13 @@
+import copy
+
 import pytest
 
 from pydantic_sweep.utils import (
-    merge_configs,
+    merge_nested_dicts,
     nested_dict_at,
     nested_dict_from_items,
+    nested_dict_get,
+    nested_dict_replace,
     normalize_path,
 )
 
@@ -66,16 +70,37 @@ def test_nested_dict_at():
     assert res == dict(a=dict(b=dict(c=5)))
 
 
+def test_nested_dict_replace():
+    d = dict(a=5, b=dict(c=6, d=7))
+    d_orig = copy.deepcopy(d)
+    expected = dict(a=5, b=dict(c=0, d=7))
+
+    res = nested_dict_replace(d, "b.c", value=0)
+    assert res == expected
+    assert d == d_orig, "In-place modification"
+
+
+def test_nested_dict_get():
+    d = dict(a=dict(b=dict(c=5)))
+
+    assert nested_dict_get(d, "a") is d["a"]
+    assert nested_dict_get(d, "a.b") is d["a"]["b"]
+    assert nested_dict_get(d, "a.b.c") == 5
+
+    with pytest.raises(KeyError):
+        nested_dict_get(d, "c")
+
+
 def test_merge_dicts():
     res = dict(a=dict(a=5, b=dict(c=6, y=9)), c=7)
     d1 = dict(a=dict(a=5, b=dict(c=6)))
     d2 = dict(c=7, a=dict(b=dict(y=9)))
-    assert merge_configs(d1, d2) == res
+    assert merge_nested_dicts(d1, d2) == res
 
     # This is already tested as part of TestUnflattenItems
     with pytest.raises(ValueError):
-        merge_configs(dict(a=1), dict(a=2))
+        merge_nested_dicts(dict(a=1), dict(a=2))
     with pytest.raises(ValueError):
-        merge_configs(dict(a=dict(a=5)), dict(a=6))
+        merge_nested_dicts(dict(a=dict(a=5)), dict(a=6))
     with pytest.raises(ValueError):
-        merge_configs(dict(a=6), dict(a=dict(a=5)))
+        merge_nested_dicts(dict(a=6), dict(a=dict(a=5)))

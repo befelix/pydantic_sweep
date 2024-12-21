@@ -1,3 +1,4 @@
+import copy
 import itertools
 import re
 from collections.abc import Iterable, Iterator
@@ -6,9 +7,11 @@ from typing import Any, TypeVar
 from pydantic_sweep.types import Config, Path, StrictPath
 
 __all__ = [
-    "dict_to_pathvalues",
-    "merge_configs",
+    "merge_nested_dicts",
+    "nested_dict_at",
     "nested_dict_from_items",
+    "nested_dict_get",
+    "nested_dict_replace",
     "normalize_path",
 ]
 
@@ -54,6 +57,42 @@ def normalize_path(path: Path, /, *, check_keys: bool = False) -> StrictPath:
                         f"Paths can only contain letters and underscores, got {p}."
                     )
         return tuple(path)
+
+
+def nested_dict_get(d, /, path: Path) -> Any:
+    """Return the value of a nested dict at a certain path."""
+    path = normalize_path(path)
+    for p in path:
+        d = d[p]
+    return d
+
+
+def nested_dict_replace(
+    d: dict, /, path: Path, value, *, inplace: bool = False
+) -> dict:
+    """Replace the value of a nested dict at a certain path (out of place)."""
+    if not inplace:
+        d = copy.deepcopy(d)
+
+    *subpath, final = normalize_path(path)
+
+    node = d
+    for i, key in enumerate(subpath):
+        sub = node[key]
+        if not isinstance(sub, dict):
+            raise ValueError(
+                f"Expected a dictionary at {_path_to_str(subpath[:i+1])}, got {sub}."
+            )
+        node = sub
+
+    if final not in node:
+        raise KeyError(
+            f"The path '{_path_to_str(path)}' is not part of the dictionary."
+        )
+    else:
+        node[final] = value
+
+    return d
 
 
 def nested_dict_at(path: Path, value) -> dict[str, Any]:
@@ -103,32 +142,32 @@ def nested_dict_from_items(items: Iterable[tuple[Path, Any]], /) -> dict[str, An
     return result
 
 
-def dict_to_pathvalues(
+def nested_dict_items(
     d: dict[str, Any], /, path: Path = ()
 ) -> Iterator[tuple[StrictPath, Any]]:
     """Yield paths and leaf values of a nested dictionary.
 
-    >>> list(dict_to_pathvalues(dict(a=dict(b=3), c=2)))
+    >>> list(nested_dict_items(dict(a=dict(b=3), c=2)))
     [(('a', 'b'), 3), (('c',), 2)]
     """
     path = normalize_path(path)
     for subkey, value in d.items():
         cur_path = (*path, subkey)
         if isinstance(value, dict):
-            yield from dict_to_pathvalues(value, path=cur_path)
+            yield from nested_dict_items(value, path=cur_path)
         else:
             yield cur_path, value
 
 
-def merge_configs(*dicts: Config) -> Config:
+def merge_nested_dicts(*dicts: Config) -> Config:
     """Merge multiple Config dictionaries into a single one.
 
     This function includes error checking for duplicate keys and accidental overwriting
     of subtrees in the nested configuration objects.
 
-    >>> merge_configs(dict(a=dict(b=2)), dict(c=3))
+    >>> merge_nested_dicts(dict(a=dict(b=2)), dict(c=3))
     {'a': {'b': 2}, 'c': 3}
     """
     return nested_dict_from_items(
-        itertools.chain(*(dict_to_pathvalues(d) for d in dicts))
+        itertools.chain(*(nested_dict_items(d) for d in dicts))
     )
