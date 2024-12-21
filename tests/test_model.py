@@ -133,21 +133,42 @@ class TestInitialize:
         m1.sub.x = 10
         assert m2.sub.x == 5
 
-    def test_field(self):
+    def test_to(self):
         class Sub(BaseModel):
             x: int = 5
 
-        sub = initialize(Sub, field("x", [0]), path="a.b")
-        assert sub == [dict(a=dict(b=Sub(x=0)))]
+        values = field("x", [0, 1])
+        assert initialize(Sub, values, to="a.b") == field(
+            "a.b", initialize(Sub, values)
+        )
 
-        sub = initialize(Sub, field("x", [0]), path="s")
-        assert sub == [dict(s=Sub(x=0))]
+        sub = initialize(Sub, field("x", [0]), to="s")
+        assert sub == field("s", [Sub(x=0)])
 
         class Model(BaseModel):
             s: Sub
 
         model = initialize(Model, sub)
         assert model == [Model(s=Sub(x=0))]
+
+    def test_at(self):
+        class Sub(BaseModel):
+            x: int
+
+        class Model(BaseModel):
+            sub: Sub
+
+        values = field("sub.x", [0])
+        partial = initialize(Sub, values, at="sub")
+        assert partial == [dict(sub=Sub(x=0))]
+
+    def test_conflicing_args(self):
+        class Sub(BaseModel):
+            x: int
+
+        initialize(Sub, [dict(x=1)])
+        with pytest.raises(ValueError):
+            initialize(Sub, [dict(x=1)], at="sub", to="sub")
 
 
 def test_config_product():

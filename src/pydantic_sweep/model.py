@@ -8,7 +8,13 @@ import more_itertools
 import pydantic
 
 from pydantic_sweep.types import Config, ModelType, Path
-from pydantic_sweep.utils import merge_configs, nested_dict_at, normalize_path
+from pydantic_sweep.utils import (
+    merge_nested_dicts,
+    nested_dict_at,
+    nested_dict_get,
+    nested_dict_replace,
+    normalize_path,
+)
 
 __all__ = [
     "BaseModel",
@@ -90,7 +96,9 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
-    path: Path,
+    *,
+    to: Path,
+    at: None,
 ) -> list[dict[str, Any]]:
     pass
 
@@ -99,7 +107,20 @@ def initialize(
 def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
-    path: None = None,
+    *,
+    to: None,
+    at: Path,
+) -> list[dict[str, Any]]:
+    pass
+
+
+@overload
+def initialize(
+    model: ModelType | type[ModelType],
+    parameters: Iterable[dict[str, Any]],
+    *,
+    to: None = None,
+    at: None = None,
 ) -> list[ModelType]:
     pass
 
@@ -107,7 +128,9 @@ def initialize(
 def initialize(
     model: ModelType | type[ModelType],
     parameters: Iterable[dict[str, Any]],
-    path: Path | None = None,
+    *,
+    to: Path | None = None,
+    at: Path | None = None,
 ) -> list[dict[str, Any]] | list[ModelType]:
     """Instantiate the models with the given parameters.
 
@@ -119,27 +142,43 @@ def initialize(
         for safety and the models are instantiated.
     parameters:
         The partial parameter dictionaries that we want to initialize with pydantic.
-    path:
-        If provided, will return a new configuration with model values at the present
-        path. This is useful for initializing nexted models.
+    to:
+        If provided, will first initialize the model and then return a
+        configuration dictionary that sets the model as the values at the given path.
+        Essentially a shortcut to first passing the models to ``field(to, models)``.
+    at:
+        If provided, will initialize the model at the given path in the configuration.
     """
     check_model(model)
 
+    # Initialize a subconfiguration at the path ``at``
+    if at is not None:
+        if to is not None:
+            raise ValueError("Only on of `path` and `at` can be provided, not both.")
+
+        subconfigs = [nested_dict_get(param, at) for param in parameters]
+        submodels = initialize(model, subconfigs)
+        return [
+            nested_dict_replace(param, path=at, value=submodel)
+            for param, submodel in zip(parameters, submodels)
+        ]
+
+    # Initialize the provided models
     if isinstance(model, pydantic.BaseModel):
-        result: list[ModelType] = [
+        models: list[ModelType] = [
             model.model_validate(model.model_copy(update=parameter).model_dump())  # type: ignore[misc]
             for parameter in parameters
         ]
     else:
-        result = [model(**parameter) for parameter in parameters]
+        models = [model(**parameter) for parameter in parameters]
 
-    if path is None:
-        return result
+    if to is not None:
+        return field(to, models)
     else:
-        return [nested_dict_at(path, res) for res in result]
+        return models
 
 
-def field(path: Path, values: Iterable) -> list[Config]:
+def field(path: Path, /, values: Iterable) -> list[Config]:
     """Assign various values to a field in a pydantic Model.
 
     Parameters
@@ -230,7 +269,7 @@ def config_combine(
     if combiner is not None:
         if chainer is not None:
             raise ValueError("Can only provide `combiner` or `chainer`, not both")
-        return [merge_configs(*combo) for combo in combiner(*configs)]
+        return [merge_nested_dicts(*combo) for combo in combiner(*configs)]
     elif chainer is not None:
         return list(chainer(*configs))
     else:
