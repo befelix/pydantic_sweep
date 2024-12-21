@@ -8,8 +8,8 @@ from pydantic_sweep.types import Config, Path, StrictPath
 __all__ = [
     "dict_to_pathvalues",
     "merge_configs",
+    "nested_dict_from_items",
     "normalize_path",
-    "pathvalues_to_dict",
 ]
 
 
@@ -56,7 +56,12 @@ def normalize_path(path: Path, /, *, check_keys: bool = False) -> StrictPath:
         return tuple(path)
 
 
-def pathvalues_to_dict(items: Iterable[tuple[Path, Any]], /) -> dict[str, Any]:
+def nested_dict_at(path: Path, value) -> dict[str, Any]:
+    """Return nested dictionary with the value at path."""
+    return nested_dict_from_items([(path, value)])
+
+
+def nested_dict_from_items(items: Iterable[tuple[Path, Any]], /) -> dict[str, Any]:
     """Convert paths and values (items) to a nested dictionary.
 
     Paths are assumed as single dot-separated strings.
@@ -124,4 +129,6 @@ def merge_configs(*dicts: Config) -> Config:
     >>> merge_configs(dict(a=dict(b=2)), dict(c=3))
     {'a': {'b': 2}, 'c': 3}
     """
-    return pathvalues_to_dict(itertools.chain(*(dict_to_pathvalues(d) for d in dicts)))
+    return nested_dict_from_items(
+        itertools.chain(*(dict_to_pathvalues(d) for d in dicts))
+    )

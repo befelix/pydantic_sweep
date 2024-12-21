@@ -88,7 +88,7 @@ class TestField:
                 pass
 
 
-class TestFinalize:
+class TestInitialize:
     def test_basic(self):
         class Model(BaseModel):
             x: int
@@ -132,6 +132,22 @@ class TestFinalize:
         assert m1.sub is not m2.sub
         m1.sub.x = 10
         assert m2.sub.x == 5
+
+    def test_field(self):
+        class Sub(BaseModel):
+            x: int = 5
+
+        sub = initialize(Sub, field("x", [0]), path="a.b")
+        assert sub == [dict(a=dict(b=Sub(x=0)))]
+
+        sub = initialize(Sub, field("x", [0]), path="s")
+        assert sub == [dict(s=Sub(x=0))]
+
+        class Model(BaseModel):
+            s: Sub
+
+        model = initialize(Model, sub)
+        assert model == [Model(s=Sub(x=0))]
 
 
 def test_config_product():

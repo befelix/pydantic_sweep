@@ -8,7 +8,7 @@ import more_itertools
 import pydantic
 
 from pydantic_sweep.types import Config, ModelType, Path
-from pydantic_sweep.utils import merge_configs, normalize_path, pathvalues_to_dict
+from pydantic_sweep.utils import merge_configs, nested_dict_at, normalize_path
 
 __all__ = [
     "BaseModel",
@@ -133,12 +133,10 @@ def initialize(
     else:
         result = [model(**parameter) for parameter in parameters]
 
-    # TODO: Test!
     if path is None:
         return result
     else:
-        path = tuple(path.split(".")) if isinstance(path, str) else tuple(path)
-        return [pathvalues_to_dict([(path, res)]) for res in result]
+        return [nested_dict_at(path, res) for res in result]
 
 
 def field(path: Path, values: Iterable) -> list[Config]:
@@ -181,7 +179,7 @@ def field(path: Path, values: Iterable) -> list[Config]:
         raise ValueError("values must be iterable, but got a string")
 
     return [
-        pathvalues_to_dict([(path, value)]) if value is not DefaultValue else dict()
+        nested_dict_at(path, value) if value is not DefaultValue else dict()
         for value in values
     ]
 
