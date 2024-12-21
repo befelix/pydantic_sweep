@@ -1,14 +1,21 @@
 import itertools
+import types
 import typing
 from collections.abc import Iterable
 from functools import partial
-from typing import Any, TypeVar, overload
+from typing import Any, Self, TypeVar, overload
 
 import more_itertools
 import pydantic
 
 from pydantic_sweep.types import Config, ModelType, Path
-from pydantic_sweep.utils import merge_configs, normalize_path, pathvalues_to_dict
+from pydantic_sweep.utils import (
+    merge_nested_dicts,
+    nested_dict_at,
+    nested_dict_get,
+    nested_dict_replace,
+    normalize_path,
+)
 
 __all__ = [
     "BaseModel",
@@ -35,14 +42,16 @@ class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
 class DefaultValue:
     """Indicator class for a default value in the `field` method."""
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         raise TypeError("This is a sentinel value and not meant to be instantiated.")
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         raise TypeError("This is a sentinel value and not meant to be subclassed.")
 
 
-def _check_model_config(model, /):
+def _check_model_config(
+    model: pydantic.BaseModel | type[pydantic.BaseModel], /
+) -> None:
     config = model.model_config
     if "extra" not in config or config["extra"] != "forbid":
         raise ValueError(
@@ -71,7 +80,9 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 
         if isinstance(model, pydantic.BaseModel):
             name = model.__class__.__name__
-        elif issubclass(model, pydantic.BaseModel):
+        # Subclass can raise error for inputs that are not type
+        # https://github.com/python/cpython/issues/101162
+        elif isinstance(model, type) and issubclass(model, pydantic.BaseModel):
             name = model.__name__
         else:
             # Just a leaf node
@@ -79,36 +90,58 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 
         if name in checked:
             continue
+
         _check_model_config(model)
         checked.add(name)
 
         for field in model.model_fields.values():
-            to_check.append(field.annotation)  # noqa: PERF401
+            annotation = field.annotation
+            if isinstance(annotation, types.UnionType):
+                to_check.extend(annotation.__args__)
+            else:
+                to_check.append(annotation)
 
 
 @overload
 def initialize(
     model: ModelType | type[ModelType],
-    parameters: Iterable[dict[str, Any]],
-    path: Path,
-) -> list[dict[str, Any]]:
+    parameters: Iterable[Config],
+    *,
+    to: Path,
+    at: Path | None = None,
+) -> list[Config]:
     pass
 
 
 @overload
 def initialize(
     model: ModelType | type[ModelType],
-    parameters: Iterable[dict[str, Any]],
-    path: None = None,
+    parameters: Iterable[Config],
+    *,
+    to: Path | None = None,
+    at: Path,
+) -> list[Config]:
+    pass
+
+
+@overload
+def initialize(
+    model: ModelType | type[ModelType],
+    parameters: Iterable[Config],
+    *,
+    to: None = None,
+    at: None = None,
 ) -> list[ModelType]:
     pass
 
 
 def initialize(
     model: ModelType | type[ModelType],
-    parameters: Iterable[dict[str, Any]],
-    path: Path | None = None,
-) -> list[dict[str, Any]] | list[ModelType]:
+    parameters: Iterable[Config],
+    *,
+    to: Path | None = None,
+    at: Path | None = None,
+) -> list[Config] | list[ModelType]:
     """Instantiate the models with the given parameters.
 
     Parameters
@@ -119,29 +152,43 @@ def initialize(
         for safety and the models are instantiated.
     parameters:
         The partial parameter dictionaries that we want to initialize with pydantic.
-    path:
-        If provided, will return a new configuration with model values at the present
-        path. This is useful for initializing nexted models.
+    to:
+        If provided, will first initialize the model and then return a
+        configuration dictionary that sets the model as the values at the given path.
+        Essentially a shortcut to first passing the models to ``field(to, models)``.
+    at:
+        If provided, will initialize the model at the given path in the configuration.
     """
     check_model(model)
 
+    # Initialize a subconfiguration at the path ``at``
+    if at is not None:
+        if to is not None:
+            raise ValueError("Only on of `path` and `at` can be provided, not both.")
+
+        subconfigs = [nested_dict_get(param, at) for param in parameters]
+        submodels = initialize(model, subconfigs)
+        return [
+            nested_dict_replace(param, path=at, value=submodel)
+            for param, submodel in zip(parameters, submodels)
+        ]
+
+    # Initialize the provided models
     if isinstance(model, pydantic.BaseModel):
-        result: list[ModelType] = [
+        models: list[ModelType] = [
             model.model_validate(model.model_copy(update=parameter).model_dump())  # type: ignore[misc]
             for parameter in parameters
         ]
     else:
-        result = [model(**parameter) for parameter in parameters]
+        models = [model(**parameter) for parameter in parameters]
 
-    # TODO: Test!
-    if path is None:
-        return result
+    if to is not None:
+        return field(to, models)
     else:
-        path = tuple(path.split(".")) if isinstance(path, str) else tuple(path)
-        return [pathvalues_to_dict([(path, res)]) for res in result]
+        return models
 
 
-def field(path: Path, values: Iterable) -> list[Config]:
+def field(path: Path, /, values: Iterable) -> list[Config]:
     """Assign various values to a field in a pydantic Model.
 
     Parameters
@@ -176,12 +223,12 @@ def field(path: Path, values: Iterable) -> list[Config]:
     [Model(sub=Sub(x=10, y=6), seed=5), Model(sub=Sub(x=20, y=6), seed=5)]
 
     """
-    path = normalize_path(path)
+    path = normalize_path(path, check_keys=True)
     if isinstance(values, str):
         raise ValueError("values must be iterable, but got a string")
 
     return [
-        pathvalues_to_dict([(path, value)]) if value is not DefaultValue else dict()
+        nested_dict_at(path, value) if value is not DefaultValue else dict()
         for value in values
     ]
 
@@ -232,7 +279,7 @@ def config_combine(
     if combiner is not None:
         if chainer is not None:
             raise ValueError("Can only provide `combiner` or `chainer`, not both")
-        return [merge_configs(*combo) for combo in combiner(*configs)]
+        return [merge_nested_dicts(*combo) for combo in combiner(*configs)]
     elif chainer is not None:
         return list(chainer(*configs))
     else:

@@ -37,12 +37,16 @@ minversion = 8.3
 addopts = "-p 'no:legacypath' --doctest-modules"
 filterwarnings = [
     "error",
+    # action:message:category:module:line
+    "ignore::DeprecationWarning:traitlets",  # Avoid debugging issues in PyCharm
 ]
 
 [tool.mypy]
 ignore_missing_imports = true
 warn_unused_configs = true
 allow_redefinition = true
+disallow_untyped_defs = true
+disallow_untyped_calls= true
 files = ["src"]
 
 [tool.ruff]

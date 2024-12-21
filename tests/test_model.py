@@ -34,28 +34,48 @@ def test_BaseModel():
         Model(x=5, y=6)
 
 
-def test_check_model():
-    class A(pydantic.BaseModel):
-        x: int
+class TestCheckModel:
+    def test_nested_fail(self):
+        class A(pydantic.BaseModel):
+            x: int
 
-    class Model(BaseModel):
-        x: int
-        a: A
+        class Model(BaseModel):
+            x: int
+            a: A
 
-    with pytest.raises(ValueError):
-        check_model(Model)
-    with pytest.raises(ValueError):
-        check_model(Model(x=5, a=dict(x=6)))
+        with pytest.raises(ValueError):
+            check_model(Model)
+        with pytest.raises(ValueError):
+            check_model(Model(x=5, a=dict(x=6)))
 
-    class B(BaseModel):
-        x: int
+    def test_nested_pass(self):
+        class B(BaseModel):
+            x: int
 
-    class Model2(BaseModel):
-        x: int
-        a: B
+        class Model2(BaseModel):
+            x: int
+            a: B
 
-    check_model(Model2)
-    check_model(Model2(x=5, a=dict(x=6)))
+        check_model(Model2)
+        check_model(Model2(x=5, a=dict(x=6)))
+
+    def test_union_types(self):
+        class A(BaseModel):
+            x: int
+
+        class B(BaseModel):
+            x: int
+
+        class Nested(BaseModel):
+            s: A | B
+
+        check_model(Nested)
+
+        class Nested(BaseModel):
+            s: A | pydantic.BaseModel
+
+        with pytest.raises(ValueError):
+            check_model(Nested)
 
 
 class TestField:
@@ -88,7 +108,7 @@ class TestField:
                 pass
 
 
-class TestFinalize:
+class TestInitialize:
     def test_basic(self):
         class Model(BaseModel):
             x: int
@@ -132,6 +152,43 @@ class TestFinalize:
         assert m1.sub is not m2.sub
         m1.sub.x = 10
         assert m2.sub.x == 5
+
+    def test_to(self):
+        class Sub(BaseModel):
+            x: int = 5
+
+        values = field("x", [0, 1])
+        assert initialize(Sub, values, to="a.b") == field(
+            "a.b", initialize(Sub, values)
+        )
+
+        sub = initialize(Sub, field("x", [0]), to="s")
+        assert sub == field("s", [Sub(x=0)])
+
+        class Model(BaseModel):
+            s: Sub
+
+        model = initialize(Model, sub)
+        assert model == [Model(s=Sub(x=0))]
+
+    def test_at(self):
+        class Sub(BaseModel):
+            x: int
+
+        class Model(BaseModel):
+            sub: Sub
+
+        values = field("sub.x", [0])
+        partial = initialize(Sub, values, at="sub")
+        assert partial == [dict(sub=Sub(x=0))]
+
+    def test_conflicing_args(self):
+        class Sub(BaseModel):
+            x: int
+
+        initialize(Sub, [dict(x=1)])
+        with pytest.raises(ValueError):
+            initialize(Sub, [dict(x=1)], at="sub", to="sub")
 
 
 def test_config_product():
