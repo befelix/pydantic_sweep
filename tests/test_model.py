@@ -34,28 +34,48 @@ def test_BaseModel():
         Model(x=5, y=6)
 
 
-def test_check_model():
-    class A(pydantic.BaseModel):
-        x: int
+class TestCheckModel:
+    def test_nested_fail(self):
+        class A(pydantic.BaseModel):
+            x: int
 
-    class Model(BaseModel):
-        x: int
-        a: A
+        class Model(BaseModel):
+            x: int
+            a: A
 
-    with pytest.raises(ValueError):
-        check_model(Model)
-    with pytest.raises(ValueError):
-        check_model(Model(x=5, a=dict(x=6)))
+        with pytest.raises(ValueError):
+            check_model(Model)
+        with pytest.raises(ValueError):
+            check_model(Model(x=5, a=dict(x=6)))
 
-    class B(BaseModel):
-        x: int
+    def test_nested_pass(self):
+        class B(BaseModel):
+            x: int
 
-    class Model2(BaseModel):
-        x: int
-        a: B
+        class Model2(BaseModel):
+            x: int
+            a: B
 
-    check_model(Model2)
-    check_model(Model2(x=5, a=dict(x=6)))
+        check_model(Model2)
+        check_model(Model2(x=5, a=dict(x=6)))
+
+    def test_union_types(self):
+        class A(BaseModel):
+            x: int
+
+        class B(BaseModel):
+            x: int
+
+        class Nested(BaseModel):
+            s: A | B
+
+        check_model(Nested)
+
+        class Nested(BaseModel):
+            s: A | pydantic.BaseModel
+
+        with pytest.raises(ValueError):
+            check_model(Nested)
 
 
 class TestField:
