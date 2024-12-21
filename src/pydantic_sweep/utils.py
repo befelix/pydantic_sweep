@@ -59,7 +59,7 @@ def normalize_path(path: Path, /, *, check_keys: bool = False) -> StrictPath:
         return tuple(path)
 
 
-def nested_dict_get(d, /, path: Path) -> Any:
+def nested_dict_get(d: dict, /, path: Path) -> Any:
     """Return the value of a nested dict at a certain path."""
     path = normalize_path(path)
     for p in path:
@@ -68,7 +68,7 @@ def nested_dict_get(d, /, path: Path) -> Any:
 
 
 def nested_dict_replace(
-    d: dict, /, path: Path, value, *, inplace: bool = False
+    d: dict, /, path: Path, value: Any, *, inplace: bool = False
 ) -> dict:
     """Replace the value of a nested dict at a certain path (out of place)."""
     if not inplace:
@@ -95,7 +95,7 @@ def nested_dict_replace(
     return d
 
 
-def nested_dict_at(path: Path, value) -> dict[str, Any]:
+def nested_dict_at(path: Path, value: Any) -> dict[str, Any]:
     """Return nested dictionary with the value at path."""
     return nested_dict_from_items([(path, value)])
 

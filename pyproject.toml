@@ -39,6 +39,8 @@ filterwarnings = [
 ignore_missing_imports = true
 warn_unused_configs = true
 allow_redefinition = true
+disallow_untyped_defs = true
+disallow_untyped_calls= true
 files = ["src"]
 
 [tool.ruff]

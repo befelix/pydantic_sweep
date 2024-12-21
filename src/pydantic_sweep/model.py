@@ -3,7 +3,7 @@ import types
 import typing
 from collections.abc import Iterable
 from functools import partial
-from typing import Any, TypeVar, overload
+from typing import Any, Self, TypeVar, overload
 
 import more_itertools
 import pydantic
@@ -42,14 +42,16 @@ class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
 class DefaultValue:
     """Indicator class for a default value in the `field` method."""
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         raise TypeError("This is a sentinel value and not meant to be instantiated.")
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         raise TypeError("This is a sentinel value and not meant to be subclassed.")
 
 
-def _check_model_config(model, /):
+def _check_model_config(
+    model: pydantic.BaseModel | type[pydantic.BaseModel], /
+) -> None:
     config = model.model_config
     if "extra" not in config or config["extra"] != "forbid":
         raise ValueError(
@@ -78,8 +80,6 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 
         if isinstance(model, pydantic.BaseModel):
             name = model.__class__.__name__
-        elif isinstance(model, types.UnionType):
-            to_check.extend(model.__args__)
         # Subclass can raise error for inputs that are not type
         # https://github.com/python/cpython/issues/101162
         elif isinstance(model, type) and issubclass(model, pydantic.BaseModel):
@@ -95,35 +95,39 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
         checked.add(name)
 
         for field in model.model_fields.values():
-            to_check.append(field.annotation)  # noqa: PERF401
+            annotation = field.annotation
+            if isinstance(annotation, types.UnionType):
+                to_check.extend(annotation.__args__)
+            else:
+                to_check.append(annotation)
 
 
 @overload
 def initialize(
     model: ModelType | type[ModelType],
-    parameters: Iterable[dict[str, Any]],
+    parameters: Iterable[Config],
     *,
     to: Path,
-    at: None,
-) -> list[dict[str, Any]]:
+    at: Path | None = None,
+) -> list[Config]:
     pass
 
 
 @overload
 def initialize(
     model: ModelType | type[ModelType],
-    parameters: Iterable[dict[str, Any]],
+    parameters: Iterable[Config],
     *,
-    to: None,
+    to: Path | None = None,
     at: Path,
-) -> list[dict[str, Any]]:
+) -> list[Config]:
     pass
 
 
 @overload
 def initialize(
     model: ModelType | type[ModelType],
-    parameters: Iterable[dict[str, Any]],
+    parameters: Iterable[Config],
     *,
     to: None = None,
     at: None = None,
@@ -133,11 +137,11 @@ def initialize(
 
 def initialize(
     model: ModelType | type[ModelType],
-    parameters: Iterable[dict[str, Any]],
+    parameters: Iterable[Config],
     *,
     to: Path | None = None,
     at: Path | None = None,
-) -> list[dict[str, Any]] | list[ModelType]:
+) -> list[Config] | list[ModelType]:
     """Instantiate the models with the given parameters.
 
     Parameters
