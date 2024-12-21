@@ -1,4 +1,5 @@
 import itertools
+import types
 import typing
 from collections.abc import Iterable
 from functools import partial
@@ -77,7 +78,11 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 
         if isinstance(model, pydantic.BaseModel):
             name = model.__class__.__name__
-        elif issubclass(model, pydantic.BaseModel):
+        elif isinstance(model, types.UnionType):
+            to_check.extend(model.__args__)
+        # Subclass can raise error for inputs that are not type
+        # https://github.com/python/cpython/issues/101162
+        elif isinstance(model, type) and issubclass(model, pydantic.BaseModel):
             name = model.__name__
         else:
             # Just a leaf node
@@ -85,6 +90,7 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 
         if name in checked:
             continue
+
         _check_model_config(model)
         checked.add(name)
 

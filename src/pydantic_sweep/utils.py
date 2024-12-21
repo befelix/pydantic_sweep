@@ -151,6 +151,8 @@ def nested_dict_items(
     [(('a', 'b'), 3), (('c',), 2)]
     """
     path = normalize_path(path)
+    if not isinstance(d, dict):
+        raise ValueError(f"Expected a dictionary, got {d} of type {type(d)}.")
     for subkey, value in d.items():
         cur_path = (*path, subkey)
         if isinstance(value, dict):
