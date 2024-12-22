@@ -236,15 +236,13 @@ def field(path: Path, /, values: Iterable) -> list[Config]:
 class Combiner(typing.Protocol[T]):
     """A function that yields tuples of items."""
 
-    def __call__(self, *configs: Iterable[T]) -> Iterable[tuple[T, ...]]:
-        pass
+    def __call__(self, *configs: Iterable[T]) -> Iterable[tuple[T, ...]]: ...
 
 
 class Chainer(typing.Protocol[T]):
     """A function that chains iterables together."""
 
-    def __call__(self, *configs: Iterable[T]) -> Iterable[T]:
-        pass
+    def __call__(self, *configs: Iterable[T]) -> Iterable[T]: ...
 
 
 def config_combine(
