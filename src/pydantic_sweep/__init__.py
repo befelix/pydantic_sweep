@@ -10,6 +10,7 @@ from .model import (
     field,
     initialize,
 )
+from .utils import random_seeds
 
 __all__ = [
     "BaseModel",
@@ -22,4 +23,5 @@ __all__ = [
     "config_zip",
     "field",
     "initialize",
+    "random_seeds",
 ]

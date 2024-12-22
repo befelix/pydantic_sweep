@@ -1,5 +1,6 @@
 import copy
 import itertools
+import random
 import re
 from collections.abc import Iterable, Iterator
 from typing import Any, TypeVar
@@ -13,6 +14,7 @@ __all__ = [
     "nested_dict_get",
     "nested_dict_replace",
     "normalize_path",
+    "random_seeds",
 ]
 
 
@@ -173,3 +175,27 @@ def merge_nested_dicts(*dicts: Config) -> Config:
     return nested_dict_from_items(
         itertools.chain(*(nested_dict_items(d) for d in dicts))
     )
+
+
+def random_seeds(num: int, *, upper: int = 1000) -> list[int]:
+    """Generate unique random values within a certain range.
+
+    This is useful in scenarios where we don't want to hard-code a random seed,
+    but also need reproducibility by setting a seed. Sampling the random seed is a
+    good compromise there.
+
+    Parameters
+    ----------
+    num :
+        The number of random seeds to generate.
+    upper:
+        A non-inclusive upper bound on the maximum seed to generate.
+
+    Returns
+    -------
+    A list of integer seeds.
+    """
+    if upper <= 0:
+        raise ValueError("Upper bound must be positive.")
+
+    return random.sample(range(upper), num)
