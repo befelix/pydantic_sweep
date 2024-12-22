@@ -29,7 +29,7 @@ sys.path.append(str(PROJECT_ROOT))
 project = "pydantic_sweep"
 copyright = "2024, Felix Berkenkamp"
 author = "Felix Berkenkamp"
-release = import_file(MODULE_ROOT / "version.py").__version__
+release = import_file(MODULE_ROOT / "_version.py").__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -44,7 +44,16 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-autoapi_dirs = ["../src"]
+autoapi_dirs = ["../src/pydantic_sweep"]
+autoapi_options = [
+    "members",
+    "undoc-members",
+    # "private-members",
+    "show-inheritance",
+    "show-module-summary",
+    "special-members",
+    "imported-members",
+]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
