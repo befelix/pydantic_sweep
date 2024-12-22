@@ -9,6 +9,7 @@ from pydantic_sweep.utils import (
     nested_dict_get,
     nested_dict_replace,
     normalize_path,
+    random_seeds,
 )
 
 
@@ -104,3 +105,11 @@ def test_merge_dicts():
         merge_nested_dicts(dict(a=dict(a=5)), dict(a=6))
     with pytest.raises(ValueError):
         merge_nested_dicts(dict(a=6), dict(a=dict(a=5)))
+
+
+def test_random_seeds():
+    assert set(random_seeds(10, upper=10)) == set(range(10))
+    with pytest.raises(ValueError):
+        random_seeds(-1)
+    with pytest.raises(ValueError):
+        random_seeds(1, upper=0)
