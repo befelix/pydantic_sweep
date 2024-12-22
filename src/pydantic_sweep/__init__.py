@@ -11,10 +11,12 @@ from .model import (
     initialize,
 )
 from .utils import random_seeds
+from .version import __version__
 
 __all__ = [
     "BaseModel",
     "DefaultValue",
+    "__version__",
     "check_model",
     "config_chain",
     "config_combine",

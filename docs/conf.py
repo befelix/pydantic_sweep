@@ -3,10 +3,25 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import importlib.util
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parents[1]))
+PROJECT_ROOT = Path(__file__).parents[1]
+MODULE_ROOT = PROJECT_ROOT.joinpath("src", "pydantic_sweep")
+
+
+def import_file(file: Path, /):
+    """Import a file directly."""
+    assert file.exists()
+    spec = importlib.util.spec_from_file_location(file.stem, file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+sys.path.append(str(PROJECT_ROOT))
+
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -14,7 +29,7 @@ sys.path.append(str(Path(__file__).parents[1]))
 project = "pydantic_sweep"
 copyright = "2024, Felix Berkenkamp"
 author = "Felix Berkenkamp"
-release = "0.1"
+release = import_file(MODULE_ROOT / "version.py").__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
