@@ -1,4 +1,5 @@
-from .model import (
+from . import types
+from ._model import (
     BaseModel,
     DefaultValue,
     check_model,
@@ -10,8 +11,8 @@ from .model import (
     field,
     initialize,
 )
-from .utils import random_seeds
-from .version import __version__
+from ._utils import random_seeds
+from ._version import __version__
 
 __all__ = [
     "BaseModel",
@@ -26,4 +27,5 @@ __all__ = [
     "field",
     "initialize",
     "random_seeds",
+    "types",
 ]

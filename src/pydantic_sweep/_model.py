@@ -8,14 +8,14 @@ from typing import Any, Self, TypeVar, overload
 import more_itertools
 import pydantic
 
-from pydantic_sweep.types import Config, ModelType, Path
-from pydantic_sweep.utils import (
+from pydantic_sweep._utils import (
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_get,
     nested_dict_replace,
     normalize_path,
 )
+from pydantic_sweep.types import Config, ModelType, Path
 
 __all__ = [
     "BaseModel",

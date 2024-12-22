@@ -1,7 +1,7 @@
 import pydantic
 import pytest
 
-from pydantic_sweep.model import (
+from pydantic_sweep._model import (
     BaseModel,
     DefaultValue,
     check_model,

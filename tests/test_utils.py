@@ -2,7 +2,7 @@ import copy
 
 import pytest
 
-from pydantic_sweep.utils import (
+from pydantic_sweep._utils import (
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_from_items,
