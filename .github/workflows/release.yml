@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # This permission is mandatory for Trusted Publishing
+      # https://docs.pypi.org/trusted-publishers/using-a-publisher/
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "~=0.5.10"
+
+      - name: Check tag
+        shell: bash
+        run: |
+            PACKAGE_VERSION=$(uv run --quiet --script src/pydantic_sweep/_version.py)
+            RELEASE_VERSION=${GITHUB_REF#refs/*/}
+
+            if [ "$RELEASE_VERSION" != "v$PACKAGE_VERSION" ];
+            then
+              echo "Tag '${RELEASE_VERSION}' does not match the package version '${PACKAGE_VERSION}'!";
+              exit 1;
+            fi
+
+      - name: Build
+        run: uv build --out-dir ./dist .
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          print-hash: true
