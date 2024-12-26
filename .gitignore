@@ -18,3 +18,5 @@ wheels/
 
 # docs
 docs/_build
+docs/autoapi
+docs/jupyter_execute

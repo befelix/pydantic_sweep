@@ -10,6 +10,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parents[1]
 MODULE_ROOT = PROJECT_ROOT.joinpath("src", "pydantic_sweep")
 
+sys.path.append(str(PROJECT_ROOT))
+
 
 def import_file(file: Path, /):
     """Import a file directly."""
@@ -18,9 +20,6 @@ def import_file(file: Path, /):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-sys.path.append(str(PROJECT_ROOT))
 
 
 # -- Project information -----------------------------------------------------
@@ -36,11 +35,11 @@ release = import_file(MODULE_ROOT / "_version.py").__version__
 
 extensions = [
     "sphinx.ext.napoleon",
-    "myst_parser",
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "autoapi.extension",
+    "myst_nb",
 ]
 
 nitpicky = True
@@ -78,8 +77,23 @@ autoapi_options = [
     "special-members",
     "imported-members",
 ]
-# autoapi_keep_files = True
+autoapi_root = "autoapi"
+autoapi_keep_files = False
+keep_warnings = True
 autodoc_typehints = "signature"
+
+# Notebook formatting
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".ipynb": "myst-nb",
+    ".myst": "myst-nb",
+}
+# Note: Multi-suffixes like .pct.py will be supported in myst-nb>1.1.2
+nb_custom_formats = {
+    ".pctpy": ["jupytext.reads", {"fmt": "py:percent"}],
+}
+nb_execution_in_temp = True
+nb_execution_allow_errors = False
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
