@@ -193,7 +193,8 @@ def random_seeds(num: int, *, upper: int = 1000) -> list[int]:
 
     Returns
     -------
-    A list of integer seeds.
+    list[int]:
+        A list of integer seeds.
     """
     if upper <= 0:
         raise ValueError("Upper bound must be positive.")
