@@ -1,6 +1,5 @@
 import itertools
 import types
-import typing
 from collections.abc import Iterable
 from functools import partial
 from typing import Any, Self, TypeVar, overload
@@ -15,7 +14,7 @@ from pydantic_sweep._utils import (
     nested_dict_replace,
     normalize_path,
 )
-from pydantic_sweep.types import Config, ModelType, Path
+from pydantic_sweep.types import Chainer, Combiner, Config, Path
 
 __all__ = [
     "BaseModel",
@@ -40,7 +39,7 @@ class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
 
 
 class DefaultValue:
-    """Indicator class for a default value in the `field` method."""
+    """Indicator class for a default value in the ``field`` method."""
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         raise TypeError("This is a sentinel value and not meant to be instantiated.")
@@ -104,7 +103,7 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 
 @overload
 def initialize(
-    model: ModelType | type[ModelType],
+    model: pydantic.BaseModel | type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
     to: Path,
@@ -115,7 +114,7 @@ def initialize(
 
 @overload
 def initialize(
-    model: ModelType | type[ModelType],
+    model: pydantic.BaseModel | type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
     to: Path | None = None,
@@ -126,22 +125,22 @@ def initialize(
 
 @overload
 def initialize(
-    model: ModelType | type[ModelType],
+    model: pydantic.BaseModel | type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
     to: None = None,
     at: None = None,
-) -> list[ModelType]:
+) -> list[pydantic.BaseModel]:
     pass
 
 
 def initialize(
-    model: ModelType | type[ModelType],
+    model: pydantic.BaseModel | type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
     to: Path | None = None,
     at: Path | None = None,
-) -> list[Config] | list[ModelType]:
+) -> list[Config] | list[pydantic.BaseModel]:
     """Instantiate the models with the given parameters.
 
     Parameters
@@ -175,7 +174,7 @@ def initialize(
 
     # Initialize the provided models
     if isinstance(model, pydantic.BaseModel):
-        models: list[ModelType] = [
+        models: list[pydantic.BaseModel] = [
             model.model_validate(model.model_copy(update=parameter).model_dump())  # type: ignore[misc]
             for parameter in parameters
         ]
@@ -203,8 +202,9 @@ def field(path: Path, /, values: Iterable) -> list[Config]:
 
     Returns
     -------
-    A list of partial configuration dictionaries that can be passed to the pydantic
-    model.
+    list[Config]:
+        A list of partial configuration dictionaries that can be passed to the pydantic
+        model.
 
     Examples
     --------
@@ -231,18 +231,6 @@ def field(path: Path, /, values: Iterable) -> list[Config]:
         nested_dict_at(path, value) if value is not DefaultValue else dict()
         for value in values
     ]
-
-
-class Combiner(typing.Protocol[T]):
-    """A function that yields tuples of items."""
-
-    def __call__(self, *configs: Iterable[T]) -> Iterable[tuple[T, ...]]: ...
-
-
-class Chainer(typing.Protocol[T]):
-    """A function that chains iterables together."""
-
-    def __call__(self, *configs: Iterable[T]) -> Iterable[T]: ...
 
 
 def config_combine(
@@ -272,7 +260,8 @@ def config_combine(
 
     Returns
     -------
-    A list of new configuration objects after combining or chaining.
+    list[Config]:
+        A list of new configuration objects after combining or chaining.
     """
     if combiner is not None:
         if chainer is not None:

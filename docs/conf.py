@@ -38,11 +38,35 @@ extensions = [
     "sphinx.ext.napoleon",
     "myst_parser",
     "sphinx_rtd_theme",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
     "autoapi.extension",
 ]
 
+nitpicky = True
+default_role = "any"
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# intersphinx_mapping = {
+#     "python": ("https://docs.python.org/3", None),
+#     "collections": ("https://docs.python.org/3/library/collections", None),
+# }
+
+nitpick_ignore = [
+    ("py:class", "collections.abc.Iterable"),
+    ("py:obj", "pydantic.BaseModel"),
+    ("py:class", "pydantic.BaseModel"),
+    ("py:class", "T"),
+    ("py:obj", "T"),
+    ("py:class", "Ellipsis"),
+    # These are somehow not found
+    ("py:class", "pydantic_sweep.types.ModelType"),
+    ("py:class", "pydantic_sweep.types.Config"),
+    ("py:class", "pydantic_sweep.types.Path"),
+    ("py:class", "pydantic_sweep.types.StrictPath"),
+]
+napoleon_use_rtype = False
 
 autoapi_dirs = ["../src/pydantic_sweep"]
 autoapi_options = [
@@ -54,6 +78,8 @@ autoapi_options = [
     "special-members",
     "imported-members",
 ]
+# autoapi_keep_files = True
+autodoc_typehints = "signature"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
