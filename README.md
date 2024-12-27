@@ -1,7 +1,12 @@
-# pydantic_sweep
+# pydantic-sweep
 
-`pydantic_sweep` is a library to programmatically and safely and flexibly define 
+`pydantic_sweep` is a library to programmatically, safely and flexibly define 
 complex parameter sweeps over `pydantic` models in Python. 
+
+![PyPI - Version](https://img.shields.io/pypi/v/pydantic-sweep)
+![Static Badge](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+![GitHub branch check runs](https://img.shields.io/github/check-runs/befelix/pydantic_sweep/main)
+![GitHub License](https://img.shields.io/github/license/befelix/pydantic_sweep)
 
 **Highlights**:
 - Specify parameter sweeps in Python
