@@ -23,9 +23,53 @@ import pydantic_sweep as ps
 
 class Model(ps.BaseModel):
     x: int
-    y: int
+    y: int = 6
 
 
 # %% [markdown]
 """
+While you could manually instantiate these models with your desired configuration, 
+this library provides an automatic way to generate configuration. The basic 
+entry-point is {py:func}`pydantic_sweep.field`, which constructs (nested) 
+dictionaries of sub-configurations. For example, to assign the values `(1, 2, 
+3)` to the field `x`, we can run:
+"""
+
+# %%
+configs = ps.field("x", [1, 2, 3])
+print(configs)
+
+# %% [markdown]
+"""
+While we could instantiate the models with these configurations manually, we will use
+the {py:func}`pydantic_sweep.initialize` method, which will make for more compact 
+code as we move to more complicated configuration setups later.
+"""
+
+# %%
+models = ps.initialize(Model, configs)
+print(models)
+
+# %% [markdown]
+"""
+Note that the models took thd efault values for `y`, while we only provided the 
+partial configurations for `x`. One feature of {any}`initialize` is that it also 
+allows us to also create models from existing, partial configurations. For example,
+in the following we use a `Model(x=0, y=0)` as the reference and overwrite the `x` 
+values using the configurations.
+"""
+
+# %%
+models = ps.initialize(Model(x=0, y=0), configs)
+print(models)
+
+# %% [markdown]
+"""
+This is mostly a convenience feature that makes it easier to quickly overwrite 
+certain fields with constant values.
+
+So far, we have encountered the two most important methods in this library: {any}`field`
+and {any}`initialize`. While these functions have a lot more features, so far we 
+haven't accomplished anything that couldn't be easily done by a list-comprehension. 
+In the next section, we will start to combine these configs in more interesting ways.
 """
