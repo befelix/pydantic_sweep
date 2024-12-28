@@ -109,10 +109,10 @@ which takes as input existing methods:
 """
 
 # %%
-configs = ps.config_combine(xs, ys, chainer=zip)
-print(configs)
-
 import itertools
+
+configs = ps.config_combine(xs, ys, chainer=itertools.chain)
+print(configs)
 
 configs = ps.config_combine(xs, ys, combiner=itertools.product)
 print(configs)
