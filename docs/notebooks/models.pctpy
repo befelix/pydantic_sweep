@@ -1,0 +1,45 @@
+# %% [markdown]
+"""
+# Model class
+
+The main intent of the library is for configuring experiments. These are typically
+relatively expensive, so that we want to avoid running a wrong configuration by accident
+at any cost. However, by default `pydantic`'s behavior is unsafe:
+"""
+# %%
+
+import pydantic
+
+
+class Model(pydantic.BaseModel):
+    x: int = 5
+
+
+m = Model(y=6)
+print(m)
+
+m.x = "not-a-number"
+print(m)
+
+# %% [markdown]
+"""
+That is, by default `pydantic` ignores extra arguments and doesn't validate 
+assignments after the initialization phase. Both of these can be changed in the 
+configuration. In particular, {py:class}`pydantic_sweep.BaseModel` configures
+
+* `extra="forbid"` to raise errors upon additional, misstyped arguments
+* `validate_assignment=True` to run validation on assignment to already initialized 
+  models. 
+
+While we check for these settings as part of our {any}`check_model` and 
+{any}`initialize` methods, these checks are not exhaustive and it may be possible to 
+induce unexpected behaviors.
+
+## Leaf values
+
+In general, `pydantic` allows arbitrary leaf values within the notebook. This 
+includes mutable objects such as dictionaries and lists. For the purpose of 
+configuring experiments, it is strongly encouraged to only use immutable types. With 
+mutable objects, it is too easy to accidentally share state across different pydantic
+models and thereby induce unexpected behaviors.  
+"""
