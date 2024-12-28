@@ -58,3 +58,6 @@ pip install '.'
 ```
 
 It will be deployed on pypi soon.
+
+For details on how to use the library, please visit the 
+[Documentation page](https://berkenkamp.me/pydantic_sweep/)

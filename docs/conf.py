@@ -34,12 +34,13 @@ release = import_file(MODULE_ROOT / "_version.py").__version__
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.napoleon",
-    "sphinx_rtd_theme",
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
-    "autoapi.extension",
-    "myst_nb",
+    "sphinx.ext.napoleon",  # Docstrings
+    "sphinx_rtd_theme",  # Theme
+    "sphinx.ext.autodoc",  # Source code documentation
+    "sphinx.ext.intersphinx",  # Link to external documentation
+    "autoapi.extension",  # Automatic API generation
+    "sphinx.ext.linkcode",  # Link to Github code
+    "myst_nb",  # Executable notebooks
 ]
 
 nitpicky = True
@@ -95,7 +96,27 @@ nb_custom_formats = {
 nb_execution_in_temp = True
 nb_execution_allow_errors = False
 
+
+def linkcode_resolve(domain, info):
+    """Link to code on Github."""
+    # https://www.sphinx-doc.org/en/master/usage/extensions/linkcode.html#module-sphinx.ext.linkcode
+    if domain != "py":
+        return None
+    if not info["module"]:
+        return None
+    filename = info["module"].replace(".", "/")
+    return f"https://github.com/befelix/pydantic_sweep/blob/main/src/{filename}.py"
+
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
+# https://docs.readthedocs.io/en/stable/guides/edit-source-links-sphinx.html
+html_context = {
+    "display_github": True,
+    "github_user": "befelix",
+    "github_repo": "pydantic_sweep",
+    "github_version": "main",
+    "conf_py_path": "/docs/",  # Path in the checkout to the docs root
+}
