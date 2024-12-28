@@ -1,0 +1,134 @@
+# %% [markdown]
+"""
+# Combinations
+
+Previously, we have instantiated a basic model and assigned parameters to it. To
+create more complex configurations, we can combine the outputs of different {any}`field`
+calls to create complex configurations. The basic methods for combining them built on
+top of the `itertools` Python package, but instead works on lists of nested
+dictionaries. There are four basic combination functions that we will get to know,
+but for now we will start with the most basic one: {any}`config_product`.
+"""
+
+# %%
+import pydantic_sweep as ps
+
+
+class Model(ps.BaseModel):
+    x: int = 0
+    y: int = 0
+    z: int = 0
+
+
+xs = ps.field("x", [1, 2])
+ys = ps.field("y", [10, 11])
+zs = ps.field("z", [20, 21, 22])
+
+configs = ps.config_product(xs, ys)
+print(configs)
+
+# %% [markdown]
+"""
+This combines the two individual configurations together and creates a product of all
+possible inputs. Like all the `ps.config_*` functions, we can provide an arbitrary 
+number of input configurations to this function.
+"""
+
+configs = ps.config_product(xs, ys, zs)
+print(configs)
+
+# %% [markdown]
+"""
+More importantly, the output of these functions is yet again a valid input, 
+which means that we can nest these call infinitely in order to create complex 
+configurations. That is, equivalently to the call above we could have executed
+"""
+
+# %%
+configs = ps.config_product(ps.config_product(xs, ys), zs)
+print(configs)
+
+# %% [markdown]
+"""
+This becomes interesting once we use other functions beyond the product. The
+{any}`config_zip` function works similar to the builtin `zip` function and merges 
+the incoming configurations:
+"""
+# %%
+configs = ps.config_zip(xs, ys)
+print(configs)
+
+# %% [markdown]
+"""
+The {any}`config_chain` and {any}`config_roundrobin` functions instead chain the 
+input configurations behind each other, the first one in the order provided while the
+latter one operates in a round-robin way taking configurations in turn:
+"""
+# %%
+configs = ps.config_chain(ys, zs)
+print(configs)
+
+configs = ps.config_roundrobin(ys, zs)
+print(configs)
+
+# %% [markdown]
+"""
+We are not in a situation to create a complex configuration.
+"""
+
+# %%
+models = ps.initialize(
+    Model,
+    ps.config_product(
+        ps.config_zip(xs, ys),
+        zs,
+    ),
+)
+print(models)
+
+# %% [markdown]
+"""
+This first zips together the `xs` and `ys` configuration, and then takes a product of
+these with all possible `zs` values, resulting in a complex configuration.
+"""
+# %% [markdown]
+"""
+## Creating new configurations
+
+A key feature of the `ps.config_*` functions is that they built around Python 
+builtins from the `itertools` package. In contrast to a naive use, they operate on 
+nested dictionaries instead and merge them in safe ways, making it impossible to 
+create conflicting configurations.
+- {any}`config_product` is the equivalent of `itertools.product`
+- {any}`config_zip` is the equivalent of the builtin `zip` function
+- {any}`config_chain` is the equivalent of `itertools.chain`
+- {any}'config_roundrobin' is the equivalent of `more_itertools.roundrobin`
+
+You can build your own new function, but using the {any}`config_combine` function,
+which takes as input existing methods:
+"""
+
+# %%
+configs = ps.config_combine(xs, ys, chainer=zip)
+print(configs)
+
+import itertools
+
+configs = ps.config_combine(xs, ys, combiner=itertools.product)
+print(configs)
+
+# %% [markdown]
+"""
+## Error checking
+
+While nested combinations are flexible, it is also easy to accidentally overwrite the
+same value twice. To avoid this, `pydantic_sweep` included built-in error checking 
+to avoid this. For example, in the following we accidentally assign values to `x` 
+twice, leading to an exception.
+"""
+
+# %% tags=["raises-exception"]
+ps.config_product(
+    ps.config_zip(xs, ys),
+    ps.field("x", [-1, -2]),
+)
