@@ -268,7 +268,13 @@ def config_combine(
             raise ValueError("Can only provide `combiner` or `chainer`, not both")
         return [merge_nested_dicts(*combo) for combo in combiner(*configs)]
     elif chainer is not None:
-        return list(chainer(*configs))
+        res = list(chainer(*configs))
+        if not isinstance(res[0], dict):
+            raise ValueError(
+                f"Chained items are not dictionaries, but {type(res[0])}. Are you sure "
+                f"that you passed a valid chainer function? "
+            )
+        return res
     else:
         raise ValueError("Must provide one of `single_out` or `multi_out`")
 
