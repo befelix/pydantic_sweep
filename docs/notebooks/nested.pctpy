@@ -93,5 +93,5 @@ print(models)
 # %% [markdown]
 """
 Next, we will give some details on the model class, before giving a final, 
-full-fledged example in :doc:`example`.
+full-fledged example in {doc}`example`.
 """
