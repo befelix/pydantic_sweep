@@ -23,3 +23,5 @@
    :maxdepth: 1
    :hidden:
    :caption: Extra Material
+
+   changelog
