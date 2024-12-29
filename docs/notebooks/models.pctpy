@@ -8,6 +8,8 @@ at any cost. However, by default `pydantic`'s behavior is unsafe:
 """
 # %%
 
+from pprint import pprint as print
+
 import pydantic
 
 
@@ -27,7 +29,7 @@ That is, by default `pydantic` ignores extra arguments and doesn't validate
 assignments after the initialization phase. Both of these can be changed in the 
 configuration. In particular, {py:class}`pydantic_sweep.BaseModel` configures
 
-* `extra="forbid"` to raise errors upon additional, misstyped arguments
+* `extra="forbid"` to raise errors upon additional, mistyped arguments
 * `validate_assignment=True` to run validation on assignment to already initialized 
   models. 
 

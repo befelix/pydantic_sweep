@@ -18,6 +18,8 @@ section for details or if you want to use your own models.
 """
 
 # %%
+from pprint import pprint as print
+
 import pydantic_sweep as ps
 
 
@@ -34,7 +36,7 @@ class Model(ps.BaseModel):
 """
 While you could manually instantiate these models with your desired configuration, 
 this library provides an automatic way to generate configuration. The basic 
-entry-point is {py:func}`pydantic_sweep.field`, which constructs (nested) 
+entry-point is the {any}`field` function, which constructs (nested) 
 dictionaries of sub-configurations using "." to identify nested fields. For example, 
 to assign the values `(1, 2, 3)` to the field `sub.x`, we can run:
 """
@@ -46,7 +48,7 @@ print(configs)
 # %% [markdown]
 """
 While we could instantiate the models with these configurations manually, we will use
-the {py:func}`pydantic_sweep.initialize` method, which will make for more compact 
+the {any}`initialize` function, which will make for more compact 
 code as we move to more complicated configuration setups later.
 """
 
