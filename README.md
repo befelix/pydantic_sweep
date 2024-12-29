@@ -46,18 +46,13 @@ models = [
 ]
 ```
 
-To learn mode about the full capabilities of the library visit our
-[documentation](https://github.com/befelix/pydantic_sweep)
+To learn mode about the full capabilities of the library visit the
+[documentation page](https://berkenkamp.me/pydantic_sweep/).
 
 ## Installation
 
 You can install the library by checking out the repo and running
 
 ```bash
-pip install '.'
+pip install 'pydantic_sweep'
 ```
-
-It will be deployed on pypi soon.
-
-For details on how to use the library, please visit the 
-[Documentation page](https://berkenkamp.me/pydantic_sweep/)
