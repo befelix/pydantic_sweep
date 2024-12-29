@@ -2,15 +2,17 @@
 """
 # Combinations
 
-Previously, we have instantiated a basic model and assigned parameters to it. To
+Previously, we instantiated a basic model and assigned parameters to it. To
 create more complex configurations, we can combine the outputs of different {any}`field`
 calls to create complex configurations. The basic methods for combining them built on
-top of the `itertools` Python package, but instead works on lists of nested
+top of the `itertools` Python package, but instead work on lists of nested
 dictionaries. There are four basic combination functions that we will get to know,
 but for now we will start with the most basic one: {any}`config_product`.
 """
 
 # %%
+from pprint import pprint as print
+
 import pydantic_sweep as ps
 
 
@@ -61,8 +63,8 @@ print(configs)
 # %% [markdown]
 """
 The {any}`config_chain` and {any}`config_roundrobin` functions instead chain the 
-input configurations behind each other, the first one in the order provided while the
-latter one operates in a round-robin way taking configurations in turn:
+input configurations behind each other, the former in the order provided while the
+latter operates in a round-robin way taking configurations in turn:
 """
 # %%
 configs = ps.config_chain(ys, zs)
@@ -95,10 +97,10 @@ these with all possible `zs` values, resulting in a complex configuration.
 """
 ## Custom combination functions
 
-A key feature of the `ps.config_*` functions is that they built around Python 
-builtins from the `itertools` package. In contrast to a naive use, they operate on 
-nested dictionaries instead and merge them in safe ways, making it impossible to 
-create conflicting configurations.
+A key feature of the `ps.config_*` functions is that they extend Python 
+builtins from the `itertools` package to operate on 
+nested dictionaries instead and merge them in safe ways. This makes it impossible to 
+create conflicting configurations by accident:
 - {any}`config_product` is the equivalent of `itertools.product`
 - {any}`config_zip` is the equivalent of the builtin `zip` function
 - {any}`config_chain` is the equivalent of `itertools.chain`
@@ -122,9 +124,9 @@ print(configs)
 ## Error checking
 
 While nested combinations are flexible, it is also easy to accidentally overwrite the
-same value twice. To avoid this, `pydantic_sweep` included built-in error checking 
-to avoid this. For example, in the following we accidentally assign values to `x` 
-twice, leading to an exception.
+same value twice. To avoid this, `pydantic_sweep` includes built-in error checking. 
+For example, in the following we accidentally assign values to `x` twice, leading to
+an exception.
 """
 
 # %%
