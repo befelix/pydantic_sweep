@@ -135,3 +135,10 @@ try:
     )
 except Exception as e:
     print(repr(e))
+
+# %% [markdown]
+"""
+The `pydantic_sweep` library tries to check things as much as possible, preferring to
+give errors as early as possible. Next, we will discuss some gotchas that occur when
+dealing with more complex, nested models.
+"""
