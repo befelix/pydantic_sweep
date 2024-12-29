@@ -163,7 +163,7 @@ def nested_dict_items(
             yield cur_path, value
 
 
-def merge_nested_dicts(*dicts: Config) -> Config:
+def merge_nested_dicts(*dicts: Config, overwrite: bool = False) -> Config:
     """Merge multiple Config dictionaries into a single one.
 
     This function includes error checking for duplicate keys and accidental overwriting
@@ -171,10 +171,27 @@ def merge_nested_dicts(*dicts: Config) -> Config:
 
     >>> merge_nested_dicts(dict(a=dict(b=2)), dict(c=3))
     {'a': {'b': 2}, 'c': 3}
+
+    >>> merge_nested_dicts(dict(a=dict(b=2)), dict(a=5), overwrite=True)
+    {'a': 5}
     """
-    return nested_dict_from_items(
-        itertools.chain(*(nested_dict_items(d) for d in dicts))
-    )
+    if not overwrite:
+        return nested_dict_from_items(
+            itertools.chain(*(nested_dict_items(d) for d in dicts))
+        )
+
+    res: Config = dict()
+    for d in dicts:
+        for path, value in nested_dict_items(d):
+            node = res
+            *subpath, final = path
+            for p in subpath:
+                if p not in node or not isinstance(node[p], dict):
+                    node[p] = dict()
+                node = node[p]  # type: ignore[assignment]
+            node[final] = value
+
+    return res
 
 
 def random_seeds(num: int, *, upper: int = 1000) -> list[int]:

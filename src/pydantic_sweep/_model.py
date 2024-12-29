@@ -10,6 +10,7 @@ import pydantic
 from pydantic_sweep._utils import (
     merge_nested_dicts,
     nested_dict_at,
+    nested_dict_from_items,
     nested_dict_get,
     nested_dict_replace,
     normalize_path,
@@ -103,9 +104,11 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 
 @overload
 def initialize(
-    model: pydantic.BaseModel | type[pydantic.BaseModel],
+    model: type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
+    constant: dict[str, Any] | None = None,
+    default: dict[str, Any] | None = None,
     to: Path,
     at: Path | None = None,
 ) -> list[Config]:
@@ -114,9 +117,11 @@ def initialize(
 
 @overload
 def initialize(
-    model: pydantic.BaseModel | type[pydantic.BaseModel],
+    model: type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
+    constant: dict[str, Any] | None = None,
+    default: dict[str, Any] | None = None,
     to: Path | None = None,
     at: Path,
 ) -> list[Config]:
@@ -125,9 +130,11 @@ def initialize(
 
 @overload
 def initialize(
-    model: pydantic.BaseModel | type[pydantic.BaseModel],
+    model: type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
+    constant: dict[str, Any] | None = None,
+    default: dict[str, Any] | None = None,
     to: None = None,
     at: None = None,
 ) -> list[pydantic.BaseModel]:
@@ -135,9 +142,11 @@ def initialize(
 
 
 def initialize(
-    model: pydantic.BaseModel | type[pydantic.BaseModel],
+    model: type[pydantic.BaseModel],
     parameters: Iterable[Config],
     *,
+    constant: dict[str, Any] | None = None,
+    default: dict[str, Any] | None = None,
     to: Path | None = None,
     at: Path | None = None,
 ) -> list[Config] | list[pydantic.BaseModel]:
@@ -151,6 +160,12 @@ def initialize(
         for safety and the models are instantiated.
     parameters:
         The partial parameter dictionaries that we want to initialize with pydantic.
+    constant:
+        Constant values that should be initialized for all models. These are safely
+        merged with the parameters.
+    default:
+        Default parameter that are initialized for all models, but may be overwritten by
+        other fields without any error checking.
     to:
         If provided, will first initialize the model and then return a
         configuration dictionary that sets the model as the values at the given path.
@@ -159,6 +174,24 @@ def initialize(
         If provided, will initialize the model at the given path in the configuration.
     """
     check_model(model)
+
+    if default is not None:
+        if not isinstance(default, dict):
+            raise TypeError(
+                f"Expected dictionary for input 'default', got '{type(default)}'."
+            )
+        default = nested_dict_from_items(default.items())
+        parameters = [
+            merge_nested_dicts(default, param, overwrite=True) for param in parameters
+        ]
+
+    if constant is not None:
+        if not isinstance(constant, dict):
+            raise TypeError(
+                f"Expected dictionary for input 'constant', got '{type(constant)}'."
+            )
+        constant = nested_dict_from_items(constant.items())
+        parameters = config_product(parameters, [constant])
 
     # Initialize a subconfiguration at the path ``at``
     if at is not None:
@@ -173,13 +206,7 @@ def initialize(
         ]
 
     # Initialize the provided models
-    if isinstance(model, pydantic.BaseModel):
-        models: list[pydantic.BaseModel] = [
-            model.model_validate(model.model_copy(update=parameter).model_dump())  # type: ignore[misc]
-            for parameter in parameters
-        ]
-    else:
-        models = [model(**parameter) for parameter in parameters]
+    models = [model(**parameter) for parameter in parameters]
 
     if to is not None:
         return field(to, models)

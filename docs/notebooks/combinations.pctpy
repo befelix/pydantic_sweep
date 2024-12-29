@@ -93,7 +93,7 @@ these with all possible `zs` values, resulting in a complex configuration.
 """
 # %% [markdown]
 """
-## Creating new configurations
+## Custom combination functions
 
 A key feature of the `ps.config_*` functions is that they built around Python 
 builtins from the `itertools` package. In contrast to a naive use, they operate on 
@@ -127,8 +127,11 @@ to avoid this. For example, in the following we accidentally assign values to `x
 twice, leading to an exception.
 """
 
-# %% tags=["raises-exception"]
-ps.config_product(
-    ps.config_zip(xs, ys),
-    ps.field("x", [-1, -2]),
-)
+# %%
+try:
+    ps.config_product(
+        ps.config_zip(xs, ys),
+        ps.field("x", [-1, -2]),
+    )
+except Exception as e:
+    print(repr(e))

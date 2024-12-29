@@ -27,8 +27,8 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/befelix/pydantic_sweep"
-Releases = "https://github.com//befelix/pydantic_sweep"
-#Documentation = "https://github.com/befelix/pydantic_sweep"
+Releases = "https://github.com/befelix/pydantic_sweep/releases"
+Documentation = "https://berkenkamp.me/pydantic_sweep"
 
 [build-system]
 requires = ["hatchling"]
@@ -53,6 +53,7 @@ doc = [
     "sphinx-autoapi>=3.4.0",
     "jupytext>=1.16.6",
     "myst-nb>=1.1.2",
+    "sphinx-copybutton>=0.5.2",
 ]
 
 [tool.pytest.ini_options]

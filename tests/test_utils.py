@@ -106,6 +106,10 @@ def test_merge_dicts():
     with pytest.raises(ValueError):
         merge_nested_dicts(dict(a=6), dict(a=dict(a=5)))
 
+    assert merge_nested_dicts(dict(a=1), dict(b=2), overwrite=True) == dict(a=1, b=2)
+    assert merge_nested_dicts(dict(a=1), dict(a=2), overwrite=True) == dict(a=2)
+    assert merge_nested_dicts(dict(a=dict(b=2)), dict(a=3), overwrite=True) == dict(a=3)
+
 
 def test_random_seeds():
     assert set(random_seeds(10, upper=10)) == set(range(10))

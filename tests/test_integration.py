@@ -40,7 +40,7 @@ def test_basic_instance():
         z: str = "a"
 
     configs = ps.initialize(
-        Model(z="new"),
+        Model,
         ps.config_product(
             ps.field("z", [ps.DefaultValue, "b"]),
             ps.config_zip(
@@ -48,6 +48,7 @@ def test_basic_instance():
                 ps.field("y", [3, 4]),
             ),
         ),
+        default=dict(z="new"),
     )
     expected = [
         Model(x=1, y=3, z="new"),

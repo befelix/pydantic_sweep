@@ -41,6 +41,7 @@ extensions = [
     "autoapi.extension",  # Automatic API generation
     "sphinx.ext.linkcode",  # Link to Github code
     "myst_nb",  # Executable notebooks
+    "sphinx_copybutton",  # Copy code cells
 ]
 
 nitpicky = True

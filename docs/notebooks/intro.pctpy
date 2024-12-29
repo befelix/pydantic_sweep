@@ -21,8 +21,12 @@ section for details or if you want to use your own models.
 import pydantic_sweep as ps
 
 
-class Model(ps.BaseModel):
+class Sub(ps.BaseModel):
     x: int
+
+
+class Model(ps.BaseModel):
+    sub: Sub
     y: int = 6
 
 
@@ -31,12 +35,12 @@ class Model(ps.BaseModel):
 While you could manually instantiate these models with your desired configuration, 
 this library provides an automatic way to generate configuration. The basic 
 entry-point is {py:func}`pydantic_sweep.field`, which constructs (nested) 
-dictionaries of sub-configurations. For example, to assign the values `(1, 2, 
-3)` to the field `x`, we can run:
+dictionaries of sub-configurations using "." to identify nested fields. For example, 
+to assign the values `(1, 2, 3)` to the field `sub.x`, we can run:
 """
 
 # %%
-configs = ps.field("x", [1, 2, 3])
+configs = ps.field("sub.x", [1, 2, 3])
 print(configs)
 
 # %% [markdown]
@@ -52,21 +56,40 @@ print(models)
 
 # %% [markdown]
 """
-Note that the models took thd efault values for `y`, while we only provided the 
-partial configurations for `x`. One feature of {any}`initialize` is that it also 
-allows us to also create models from existing, partial configurations. For example,
-in the following we use a `Model(x=0, y=0)` as the reference and overwrite the `x` 
-values using the configurations.
+Note that the models took the default values for `y`, while we only provided the 
+partial configurations for `x`.
+
+## Fixed and Default values
+
+Sometimes we want to set the same values for all the models. For this, we can use the
+`constant` field:
 """
 
 # %%
-models = ps.initialize(Model(x=0, y=0), configs)
+models = ps.initialize(Model, configs, constant=dict(y=0))
 print(models)
 
 # %% [markdown]
 """
-This is mostly a convenience feature that makes it easier to quickly overwrite 
-certain fields with constant values.
+The parameter `y=0` is safely merged with the other configurations. If we only want 
+to change the default values of the model, we need to use the `default` argument 
+instead. We will also use the {any}`DefaultValue` placeholder to define a placeholder
+that does not modify values.
+"""
+
+# %%
+models = ps.initialize(
+    Model,
+    ps.field("y", [10, ps.DefaultValue]),
+    constant={"sub.x": 0},
+    default={"y": 0},
+)
+print(models)
+
+# %% [markdown]
+"""
+Note that while the original `Model` defines `y=6`, here the default value is `0` as 
+defined above.
 
 So far, we have encountered the two most important methods in this library: {any}`field`
 and {any}`initialize`. While these functions have a lot more features, so far we 
