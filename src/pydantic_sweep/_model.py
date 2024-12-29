@@ -55,14 +55,8 @@ def _check_model_config(
     config = model.model_config
     if "extra" not in config or config["extra"] != "forbid":
         raise ValueError(
-            "Model must have extra=forbid option enabled. Without "
-            "this typose in parameters will be silently ignored."
-        )
-
-    if "validate_assignment" not in config or not config["validate_assignment"]:
-        raise ValueError(
-            "Model must have validate_assignment=True option enabled. "
-            "Without this the type of arguments will not be verified."
+            "Model must have extra=forbid option enabled. Without this, typos in "
+            "field names will be silently ignored."
         )
 
 
@@ -105,7 +99,7 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
 @overload
 def initialize(
     model: type[pydantic.BaseModel],
-    parameters: Iterable[Config],
+    configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
     default: dict[str, Any] | None = None,
@@ -118,7 +112,7 @@ def initialize(
 @overload
 def initialize(
     model: type[pydantic.BaseModel],
-    parameters: Iterable[Config],
+    configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
     default: dict[str, Any] | None = None,
@@ -131,7 +125,7 @@ def initialize(
 @overload
 def initialize(
     model: type[pydantic.BaseModel],
-    parameters: Iterable[Config],
+    configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
     default: dict[str, Any] | None = None,
@@ -143,7 +137,7 @@ def initialize(
 
 def initialize(
     model: type[pydantic.BaseModel],
-    parameters: Iterable[Config],
+    configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
     default: dict[str, Any] | None = None,
@@ -158,8 +152,8 @@ def initialize(
         The pydantic model that we want to finalize. This can be either a model cass
         or an instance of a specific model. In both cases, the configuration is checked
         for safety and the models are instantiated.
-    parameters:
-        The partial parameter dictionaries that we want to initialize with pydantic.
+    configs:
+        The partial config dictionaries that we want to initialize with pydantic.
     constant:
         Constant values that should be initialized for all models. These are safely
         merged with the parameters.
@@ -181,8 +175,8 @@ def initialize(
                 f"Expected dictionary for input 'default', got '{type(default)}'."
             )
         default = nested_dict_from_items(default.items())
-        parameters = [
-            merge_nested_dicts(default, param, overwrite=True) for param in parameters
+        configs = [
+            merge_nested_dicts(default, param, overwrite=True) for param in configs
         ]
 
     if constant is not None:
@@ -191,22 +185,22 @@ def initialize(
                 f"Expected dictionary for input 'constant', got '{type(constant)}'."
             )
         constant = nested_dict_from_items(constant.items())
-        parameters = config_product(parameters, [constant])
+        configs = config_product(configs, [constant])
 
     # Initialize a subconfiguration at the path ``at``
     if at is not None:
         if to is not None:
             raise ValueError("Only on of `path` and `at` can be provided, not both.")
 
-        subconfigs = [nested_dict_get(param, at) for param in parameters]
+        subconfigs = [nested_dict_get(param, at) for param in configs]
         submodels = initialize(model, subconfigs)
         return [
             nested_dict_replace(param, path=at, value=submodel)
-            for param, submodel in zip(parameters, submodels)
+            for param, submodel in zip(configs, submodels)
         ]
 
     # Initialize the provided models
-    models = [model(**parameter) for parameter in parameters]
+    models = [model(**config) for config in configs]
 
     if to is not None:
         return field(to, models)

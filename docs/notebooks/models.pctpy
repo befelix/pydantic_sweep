@@ -41,5 +41,8 @@ In general, `pydantic` allows arbitrary leaf values within the notebook. This
 includes mutable objects such as dictionaries and lists. For the purpose of 
 configuring experiments, it is strongly encouraged to only use immutable types. With 
 mutable objects, it is too easy to accidentally share state across different pydantic
-models and thereby induce unexpected behaviors.  
+models and thereby induce unexpected behaviors.
+
+On the next page, we will conclude the tutorial with a full-fledged example on how to
+use the library.
 """
