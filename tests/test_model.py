@@ -89,7 +89,7 @@ class TestField:
         assert field("a.b", [1]) == [dict(a=dict(b=1))]
         assert field(("a", "b"), [1]) == [dict(a=dict(b=1))]
 
-    def test_default(self):
+    def test_default_value(self):
         assert field("a", [DefaultValue]) == [dict()]
 
         class Model(BaseModel):
@@ -114,17 +114,16 @@ class TestInitialize:
             x: int
 
         assert initialize(Model, [{"x": 5}]) == [Model(x=5)]
-        assert initialize(Model(x=6), [{"x": 5}]) == [Model(x=5)]
 
     def test_partial(self):
         """Test partial instantiation of model."""
 
         class Model(BaseModel):
             x: int
-            y: int
+            y: int = 6
 
-        m = Model(x=5, y=6)
-        m1, m2 = initialize(m, [{"x": 10}, {"x": 11}])
+        m = Model(x=100)
+        m1, m2 = initialize(Model, [{"x": 10}, {"x": 11}])
         assert m1 == Model(x=10, y=6)
         assert m2 == Model(x=11, y=6)
 
@@ -148,10 +147,52 @@ class TestInitialize:
         m1.sub.x = 10
         assert m2.sub.x == 5
 
-        m1, m2 = initialize(Model(x=10), [{"x": 5}, {"x": 6}])
+        m1, m2 = initialize(Model, [{"x": 5}, {"x": 6}], default=dict(x=10))
         assert m1.sub is not m2.sub
         m1.sub.x = 10
         assert m2.sub.x == 5
+
+    def test_default(self):
+        class Sub(BaseModel):
+            x: int
+
+        class Model(BaseModel):
+            sub: Sub
+            y: int = 0
+
+        res = initialize(Model, field("sub.x", [1]), default=dict(y=10))
+        assert res == [Model(sub=Sub(x=1), y=10)]
+
+        res = initialize(
+            Model,
+            field("sub.x", [DefaultValue]),
+            constant=dict(y=10),
+            default={"sub.x": 99},
+        )
+        assert res == [Model(sub=Sub(x=99), y=10)]
+
+    def test_constant(self):
+        class Sub(BaseModel):
+            x: int
+
+        class Model(BaseModel):
+            sub: Sub
+            y: int = 0
+
+        res = initialize(Model, field("sub.x", [1]), constant=dict(y=10))
+        assert res == [Model(sub=Sub(x=1), y=10)]
+
+        res = initialize(Model, field("sub.x", [1, 2]), constant=dict(y=10))
+        assert res == [Model(sub=Sub(x=1), y=10), Model(sub=Sub(x=2), y=10)]
+
+        res = initialize(Model, [dict()], constant={"sub.x": 0})
+        assert res == [Model(sub=Sub(x=0))]
+
+        with pytest.raises(TypeError):
+            initialize(Model, [], constant=[5])
+
+        with pytest.raises(ValueError):
+            initialize(Model, field("sub.x", [1]), constant={"sub.x": 2})
 
     def test_to(self):
         class Sub(BaseModel):
