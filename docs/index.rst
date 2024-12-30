@@ -25,3 +25,4 @@
    :caption: Extra Material
 
    changelog
+   contributing

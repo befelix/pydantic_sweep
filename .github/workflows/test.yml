@@ -53,8 +53,9 @@ jobs:
           uv run --group doc \
             sphinx-build \
               --jobs 2 \
-              --fail-on-warning docs \
+              --fail-on-warning \
               -b html \
+              docs \
               docs/_build/html
 
       - name: Upload static files as artifact
