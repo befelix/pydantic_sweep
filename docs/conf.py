@@ -105,8 +105,20 @@ def linkcode_resolve(domain, info):
         return None
     if not info["module"]:
         return None
+    # linkcode is not aware of import in __init__, so need to do some annoying
+    # duplication here. Could perhaps be replaced by importing each function and
+    # checking `__module__`.
     filename = info["module"].replace(".", "/")
-    return f"https://github.com/befelix/pydantic_sweep/blob/main/src/{filename}.py"
+    py_obj_name = info["fullname"]
+    if filename.endswith(".types"):
+        filename = f"{filename}.py"
+    elif py_obj_name == "random_seeds":
+        filename = f"{filename}/_utils.py"
+    elif py_obj_name == "__version__":
+        filename = f"{filename}/_version.py"
+    else:
+        filename = f"{filename}/_model.py"
+    return f"https://github.com/befelix/pydantic_sweep/blob/main/src/{filename}"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -121,3 +133,5 @@ html_context = {
     "github_version": "main",
     "conf_py_path": "/docs/",  # Path in the checkout to the docs root
 }
+# Do not copy the source code files into the documentation
+html_copy_source = False
