@@ -8,10 +8,12 @@ import more_itertools
 import pydantic
 
 from pydantic_sweep._utils import (
+    items_skip,
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_from_items,
     nested_dict_get,
+    nested_dict_items,
     nested_dict_replace,
     normalize_path,
 )
@@ -96,6 +98,16 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
                 to_check.append(annotation)
 
 
+def _config_prune_default(config: Config) -> Config:
+    """Prune default value placeholders from a config.
+
+    This allows pydantic to handle initialization of them.
+    """
+    items = nested_dict_items(config)
+    items = items_skip(items, target=DefaultValue)
+    return nested_dict_from_items(items)
+
+
 @overload
 def initialize(
     model: type[pydantic.BaseModel],
@@ -169,23 +181,30 @@ def initialize(
     """
     check_model(model)
 
-    if default is not None:
-        if not isinstance(default, dict):
-            raise TypeError(
-                f"Expected dictionary for input 'default', got '{type(default)}'."
-            )
-        default = nested_dict_from_items(default.items())
-        configs = [
-            merge_nested_dicts(default, param, overwrite=True) for param in configs
-        ]
-
     if constant is not None:
         if not isinstance(constant, dict):
             raise TypeError(
                 f"Expected dictionary for input 'constant', got '{type(constant)}'."
             )
+
         constant = nested_dict_from_items(constant.items())
         configs = config_product(configs, [constant])
+
+    # Remove placeholders now
+    configs = [_config_prune_default(config) for config in configs]
+
+    if default is not None:
+        if not isinstance(default, dict):
+            raise TypeError(
+                f"Expected dictionary for input 'default', got '{type(default)}'."
+            )
+        # A DefaultValue as a default should not change anything
+        default = nested_dict_from_items(
+            items_skip(default.items(), target=DefaultValue)
+        )
+        configs = [
+            merge_nested_dicts(default, param, overwrite=True) for param in configs
+        ]
 
     # Initialize a subconfiguration at the path ``at``
     if at is not None:
@@ -248,10 +267,7 @@ def field(path: Path, /, values: Iterable) -> list[Config]:
     if isinstance(values, str):
         raise ValueError("values must be iterable, but got a string")
 
-    return [
-        nested_dict_at(path, value) if value is not DefaultValue else dict()
-        for value in values
-    ]
+    return [nested_dict_at(path, value) for value in values]
 
 
 def config_combine(

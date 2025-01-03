@@ -90,8 +90,6 @@ class TestField:
         assert field(("a", "b"), [1]) == [dict(a=dict(b=1))]
 
     def test_default_value(self):
-        assert field("a", [DefaultValue]) == [dict()]
-
         class Model(BaseModel):
             x: int = 5
 
@@ -163,6 +161,10 @@ class TestInitialize:
         res = initialize(Model, field("sub.x", [1]), default=dict(y=10))
         assert res == [Model(sub=Sub(x=1), y=10)]
 
+        # Default as default value should not have any effect
+        res = initialize(Model, field("sub.x", [1]), default=dict(y=DefaultValue))
+        assert res == [Model(sub=Sub(x=1), y=0)]
+
         res = initialize(
             Model,
             field("sub.x", [DefaultValue]),
@@ -182,6 +184,9 @@ class TestInitialize:
         res = initialize(Model, field("sub.x", [1]), constant=dict(y=10))
         assert res == [Model(sub=Sub(x=1), y=10)]
 
+        res = initialize(Model, field("sub.x", [1]), constant=dict(y=DefaultValue))
+        assert res == [Model(sub=Sub(x=1), y=0)]
+
         res = initialize(Model, field("sub.x", [1, 2]), constant=dict(y=10))
         assert res == [Model(sub=Sub(x=1), y=10), Model(sub=Sub(x=2), y=10)]
 
@@ -193,6 +198,10 @@ class TestInitialize:
 
         with pytest.raises(ValueError):
             initialize(Model, field("sub.x", [1]), constant={"sub.x": 2})
+
+        # Also DefaultValue should conflict here
+        with pytest.raises(ValueError):
+            initialize(Model, field("sub.x", [1]), constant={"sub.x": DefaultValue})
 
     def test_to(self):
         class Sub(BaseModel):
@@ -270,3 +279,18 @@ def test_config_roundrobin():
     # Same keys should not cause conflicts here
     res = config_chain(field("a", [1]), field("b", [2]))
     assert res == [dict(a=1), dict(b=2)]
+
+
+def test_default_override():
+    """Make sure default values cannot be overwritten."""
+    with pytest.raises(ValueError):
+        config_product(
+            field("a", [DefaultValue]),
+            field("a", [DefaultValue]),
+        )
+
+    with pytest.raises(ValueError):
+        config_product(
+            field("a", [1.0]),
+            field("a", [DefaultValue]),
+        )
