@@ -41,7 +41,14 @@ class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
     pass
 
 
-class DefaultValue:
+class NameMetaClass(type):
+    """A metaclass that overwrite cls.__str__ to its name"""
+
+    def __str__(cls) -> str:
+        return cls.__name__
+
+
+class DefaultValue(metaclass=NameMetaClass):
     """Indicator class for a default value in the ``field`` method."""
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Self:

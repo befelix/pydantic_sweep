@@ -36,6 +36,7 @@ possible inputs. Like all the `ps.config_*` functions, we can provide an arbitra
 number of input configurations to this function.
 """
 
+# %%
 configs = ps.config_product(xs, ys, zs)
 print(configs)
 

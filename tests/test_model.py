@@ -105,6 +105,8 @@ class TestField:
             class Test(DefaultValue):
                 pass
 
+        assert str(DefaultValue) == "DefaultValue"
+
 
 class TestInitialize:
     def test_basic(self):
