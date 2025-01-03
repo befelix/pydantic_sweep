@@ -3,6 +3,12 @@
 This page summarizes historic changes in the library. Please also see the
 [release page](https://github.com/befelix/pydantic_sweep/releases)
 
+## Unreleased changes on main branch
+
+- `DefaultValue` is checked against conflicting settings the same way as normal values
+- Passing `DefaultValue` to the `default`/`constant` argument of `initialize` works as
+  expected.
+
 ## 0.1
 
 - Initial release

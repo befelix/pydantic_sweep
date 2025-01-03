@@ -8,10 +8,12 @@ from typing import Any, TypeVar
 from pydantic_sweep.types import Config, Path, StrictPath
 
 __all__ = [
+    "items_skip",
     "merge_nested_dicts",
     "nested_dict_at",
     "nested_dict_from_items",
     "nested_dict_get",
+    "nested_dict_items",
     "nested_dict_replace",
     "normalize_path",
     "random_seeds",
@@ -192,6 +194,17 @@ def merge_nested_dicts(*dicts: Config, overwrite: bool = False) -> Config:
             node[final] = value
 
     return res
+
+
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+def items_skip(items: Iterable[tuple[K, V]], target: Any) -> Iterator[tuple[K, V]]:
+    """Yield items skipping certain targets."""
+    for key, value in items:
+        if value is not target:
+            yield key, value
 
 
 def random_seeds(num: int, *, upper: int = 1000) -> list[int]:
