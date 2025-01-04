@@ -21,8 +21,8 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-    "more-itertools>=10.5.0",
-    "pydantic>=2.10.3",
+    "more-itertools~=10.1",
+    "pydantic~=2.1",
 ]
 
 [project.urls]
