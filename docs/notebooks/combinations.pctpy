@@ -11,7 +11,7 @@ but for now we will start with the most basic one: {any}`config_product`.
 """
 
 # %%
-from pprint import pprint as print
+from pprint import pprint
 
 import pydantic_sweep as ps
 
@@ -27,7 +27,7 @@ ys = ps.field("y", [10, 11])
 zs = ps.field("z", [20, 21, 22])
 
 configs = ps.config_product(xs, ys)
-print(configs)
+pprint(configs)
 
 # %% [markdown]
 """
@@ -38,7 +38,7 @@ number of input configurations to this function.
 
 # %%
 configs = ps.config_product(xs, ys, zs)
-print(configs)
+pprint(configs)
 
 # %% [markdown]
 """
@@ -49,7 +49,7 @@ configurations. That is, equivalently to the call above we could have executed
 
 # %%
 configs = ps.config_product(ps.config_product(xs, ys), zs)
-print(configs)
+pprint(configs)
 
 # %% [markdown]
 """
@@ -59,7 +59,7 @@ the incoming configurations:
 """
 # %%
 configs = ps.config_zip(xs, ys)
-print(configs)
+pprint(configs)
 
 # %% [markdown]
 """
@@ -69,10 +69,10 @@ latter operates in a round-robin way taking configurations in turn:
 """
 # %%
 configs = ps.config_chain(ys, zs)
-print(configs)
+pprint(configs)
 
 configs = ps.config_roundrobin(ys, zs)
-print(configs)
+pprint(configs)
 
 # %% [markdown]
 """
@@ -87,7 +87,7 @@ models = ps.initialize(
         zs,
     ),
 )
-print(models)
+pprint(models)
 
 # %% [markdown]
 """
@@ -115,10 +115,10 @@ which takes as input existing methods:
 import itertools
 
 configs = ps.config_combine(xs, ys, chainer=itertools.chain)
-print(configs)
+pprint(configs)
 
 configs = ps.config_combine(xs, ys, combiner=itertools.product)
-print(configs)
+pprint(configs)
 
 # %% [markdown]
 """
@@ -136,8 +136,8 @@ try:
         ps.config_zip(xs, ys),
         ps.field("x", [-1, -2]),
     )
-except Exception as e:
-    print(repr(e))
+except ValueError as e:
+    print(e)
 
 # %% [markdown]
 """

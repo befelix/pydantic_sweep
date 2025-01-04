@@ -8,7 +8,7 @@ how to use the library. We start by defining nested models.
 
 # %%
 
-from pprint import pprint as print
+from pprint import pprint
 from typing import Literal
 
 import pydantic_sweep as ps
@@ -84,7 +84,7 @@ models = ps.initialize(
         ),
     ),
 )
-print(models)
+pprint(models)
 
 # %% [markdown]
 """
