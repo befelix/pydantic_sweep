@@ -16,6 +16,7 @@ from pydantic_sweep._utils import (
     nested_dict_items,
     nested_dict_replace,
     normalize_path,
+    notebook_link,
 )
 from pydantic_sweep.types import Chainer, Combiner, Config, Path
 
@@ -38,7 +39,74 @@ T = TypeVar("T")
 class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
     """Base model with validation enabled by default."""
 
-    pass
+    @pydantic.model_validator(mode="before")
+    @classmethod
+    def _safe_union_validator(cls, data: Any) -> Any:
+        """Disallow unsafe matches to nested Union models.
+
+        By default, pydantic does not raise an error if multiple pydantic models in a
+        union type could match the provided data.
+        """
+        if isinstance(data, dict):
+            fields = cls.model_fields
+            for key, value in data.items():
+                # Only dicts needs special handling, since static values cannot
+                # represent nested models. This also covers the case if value is
+                # already a pydantic model.
+                if not isinstance(value, dict):
+                    continue
+
+                # extra items are handled by extra='forbid' model setting.
+                try:
+                    field = fields[key]
+                except AttributeError:
+                    continue
+
+                # Fields that are not Unions are safely resolved by pydantic
+                if not isinstance(field.annotation, types.UnionType):
+                    continue
+
+                # Discriminators are an alternative way to handle this
+                if field.discriminator is not None or any(
+                    isinstance(m, pydantic.Discriminator) for m in field.metadata
+                ):
+                    continue
+
+                # Manually validate each model.
+                matches = []
+                for annotation in field.annotation.__args__:
+                    # Any other type should not need validation, since either they
+                    # can't match or, in the case of dictionaries, pydantic models
+                    # are preferred under the best-match strategy.
+                    if isinstance(annotation, type) and issubclass(
+                        annotation, pydantic.BaseModel
+                    ):
+                        try:
+                            res = annotation.model_validate(value)
+                        except pydantic.ValidationError:
+                            pass
+                        else:
+                            matches.append((annotation.__name__, res))
+
+                if len(matches) > 1:
+                    from pydantic_core import PydanticCustomError
+
+                    raise PydanticCustomError(
+                        "unsafe_union_error",
+                        "Multiple models of a Union type could match the provided "
+                        "data: {conflicts}. To avoid this error, either "
+                        "initialize the nested model manually using the `initialize` "
+                        "method or use a discriminated union. See {docs} for details.",
+                        dict(
+                            conflicts=", ".join([name for name, _ in matches]),
+                            docs=notebook_link("nested"),
+                        ),
+                    )
+                elif matches:
+                    # Avoid re-running the model validation downstream
+                    data[key] = matches[0][1]
+
+        return data
 
 
 class NameMetaClass(type):

@@ -18,7 +18,7 @@ section for details or if you want to use your own models.
 """
 
 # %%
-from pprint import pprint as print
+from pprint import pprint
 
 import pydantic_sweep as ps
 
@@ -43,7 +43,7 @@ to assign the values `(1, 2, 3)` to the field `sub.x`, we can run:
 
 # %%
 configs = ps.field("sub.x", [1, 2, 3])
-print(configs)
+pprint(configs)
 
 # %% [markdown]
 """
@@ -54,7 +54,7 @@ code as we move to more complicated configuration setups later.
 
 # %%
 models = ps.initialize(Model, configs)
-print(models)
+pprint(models)
 
 # %% [markdown]
 """
@@ -69,7 +69,7 @@ Sometimes we want to set the same values for all the models. For this, we can us
 
 # %%
 models = ps.initialize(Model, configs, constant=dict(y=0))
-print(models)
+pprint(models)
 
 # %% [markdown]
 """
@@ -86,7 +86,7 @@ models = ps.initialize(
     constant={"sub.x": 0},
     default={"y": 0},
 )
-print(models)
+pprint(models)
 
 # %% [markdown]
 """

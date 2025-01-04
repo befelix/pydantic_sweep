@@ -5,11 +5,16 @@
 So far, we have only considered basic nested models. Configuration gets more interesting
 when there are Union types for sub-models in pydantic. While one could use the previous
 methods, by default `pydantic`'s initialization behavior will match partial
-configurations to the first Model type that matches:
+configurations to the ["best" Model type that matches](
+https://docs.pydantic.dev/latest/concepts/unions/). This
+explicitly allows ambiguity, when multiple could match. Instead, `BaseModel` includes a
+ custom `model_validator` that disallows these kind of unsafe unions:
 """
 
 # %%
-from pprint import pprint as print
+from pprint import pprint
+
+import pydantic
 
 import pydantic_sweep as ps
 
@@ -30,15 +35,21 @@ class Environment(ps.BaseModel):
 
 
 xs = ps.field("method.x", [1, 2])
-models = ps.initialize(Environment, xs)
-print(models)
+
+try:
+    ps.initialize(Environment, xs)
+except pydantic.ValidationError as e:
+    print(e)
 
 # %% [markdown]
 """
-Here the `method.x` value can match either `Method1` or `Method2` and `pydantic` 
-defaults to selecting the first method that matches. To avoid this behavior, 
-it's best to directly configure the methods individually. The {any}`initialize` 
-method provides two ways to do this via the `at` and `to` keyword arguments.
+Here the `method.x` value can match either `Method1` or `Method2`. As suggested by 
+the error, to avoid this behavior either we need to make it explicit which model we 
+want to use. `pydantic` offers a way to do this through [discriminated unions](
+https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions). 
+Alternatively, we can directly initialize the sub-models individually. The 
+{any}`initialize` method provides two ways to do this via the `at` and `to` keyword
+arguments.
  
 The `to` keyword is a shortcut to the following code, which first instantiates a
 `Method1` model and then passes the models as input to the `field` method.
@@ -47,7 +58,7 @@ The `to` keyword is a shortcut to the following code, which first instantiates a
 # %%
 xs = ps.field("x", [1, 2])
 configs_m1 = ps.field("method", ps.initialize(Method1, xs))
-print(ps.initialize(Environment, configs_m1))
+pprint(ps.initialize(Environment, configs_m1))
 
 # %% [markdown]
 """
@@ -56,7 +67,7 @@ For convenience, we can instead directly use the initialize `to` argument.`:
 
 # %%
 configs_m1 = ps.initialize(Method1, xs, to="method")
-print(ps.initialize(Environment, configs_m1))
+pprint(ps.initialize(Environment, configs_m1))
 
 # %% [markdown]
 """
@@ -67,7 +78,7 @@ and then initialize a model `at` the respective field.
 # %%
 zs = ps.field("method.z", [3, 4])
 configs_m2 = ps.initialize(Method2, zs, at="method")
-print(ps.initialize(Environment, configs_m2))
+pprint(ps.initialize(Environment, configs_m2))
 
 # %% [markdown]
 """
@@ -88,7 +99,7 @@ models = ps.initialize(
         ps.config_chain(configs_m1, configs_m2),
     ),
 )
-print(models)
+pprint(models)
 
 # %% [markdown]
 """

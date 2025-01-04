@@ -1,5 +1,8 @@
+from typing import Annotated
+
 import pydantic
 import pytest
+from pydantic import Discriminator, Tag
 
 from pydantic_sweep._model import (
     BaseModel,
@@ -14,24 +17,75 @@ from pydantic_sweep._model import (
 )
 
 
-def test_BaseModel():
-    class Model(BaseModel):
-        x: int
+class TestBaseModel:
+    def test_config(self):
+        class Model(BaseModel):
+            x: int
 
-    assert Model(x=5).x == 5
+        assert Model(x=5).x == 5
 
-    # Wrong type for x
-    with pytest.raises(ValueError):
-        Model(x=None)
+        # Wrong type for x
+        with pytest.raises(ValueError):
+            Model(x=None)
 
-    # Assign wrong type for x to instantiated model
-    model = Model(x=5)
-    with pytest.raises(ValueError):
-        model.x = None
+        # Assign wrong type for x to instantiated model
+        model = Model(x=5)
+        with pytest.raises(ValueError):
+            model.x = None
 
-    # Extra field
-    with pytest.raises(ValueError):
-        Model(x=5, y=6)
+        # Extra field
+        with pytest.raises(ValueError):
+            Model(x=5, y=6)
+
+    def test_validation(self):
+        class Sub1(BaseModel):
+            x: pydantic.StrictInt | pydantic.StrictFloat
+            y: int = 5
+
+        class Sub2(BaseModel):
+            x: pydantic.StrictInt
+
+        class Model(BaseModel):
+            sub: Annotated[Sub1 | Sub2, "Select them automatically"]
+
+        with pytest.raises(pydantic.ValidationError):
+            Model(sub=dict(x=1))
+
+        # These should work, since they uniquely identify Sub1
+        assert Model(sub=dict(x=1, y=2)) == Model(sub=Sub1(x=1, y=2))
+        assert Model(sub=dict(x=1.0)) == Model(sub=Sub1(x=1.0))
+
+    def test_validation_discriminator(self):
+        class Sub1(BaseModel):
+            x: int
+
+        class Sub2(BaseModel):
+            x: int
+
+        class DiscModel(BaseModel):
+            sub: Annotated[
+                Annotated[Sub1, Tag("sub1")] | Annotated[Sub2, Tag("sub2")],
+                Discriminator(lambda *args: "sub2"),
+            ]
+
+        assert DiscModel(sub=dict(x=1)) == DiscModel(sub=Sub2(x=1))
+
+    def test_validation_dict(self):
+        # This is strongly discouraged, but the validator should still works
+        class Model(BaseModel):
+            d: dict[str, int] | int
+
+        Model(d=dict(x=1))
+
+        # This is unsafe and shouldn't
+        class Sub(BaseModel):
+            x: int
+
+        # Best match should prefer the pydantic Basemodel
+        class Model(BaseModel):
+            d: dict[str, float] | Sub
+
+        assert Model(d=dict(x=1.0)) == Model(d=Sub(x=1.0))
 
 
 class TestCheckModel:

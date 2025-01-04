@@ -3,7 +3,7 @@ import itertools
 import random
 import re
 from collections.abc import Iterable, Iterator
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 from pydantic_sweep.types import Config, Path, StrictPath
 
@@ -16,6 +16,7 @@ __all__ = [
     "nested_dict_items",
     "nested_dict_replace",
     "normalize_path",
+    "notebook_link",
     "random_seeds",
 ]
 
@@ -230,3 +231,9 @@ def random_seeds(num: int, *, upper: int = 1000) -> list[int]:
         raise ValueError("Upper bound must be positive.")
 
     return random.sample(range(upper), num)
+
+
+def notebook_link(
+    name: Literal["combinations", "example", "intro", "models", "nested"],
+) -> str:
+    return f"https://berkenkamp.me/pydantic_sweep/notebooks/{name}.html"

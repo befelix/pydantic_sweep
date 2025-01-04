@@ -6,9 +6,9 @@ The main intent of the library is for configuring experiments. These are typical
 relatively expensive, so that we want to avoid running a wrong configuration by accident
 at any cost. However, by default `pydantic`'s behavior is unsafe:
 """
-# %%
 
-from pprint import pprint as print
+# %%
+from pprint import pprint
 
 import pydantic
 
@@ -18,10 +18,10 @@ class Model(pydantic.BaseModel):
 
 
 m = Model(y=6)
-print(m)
+pprint(m)
 
 m.x = "not-a-number"
-print(m)
+pprint(m)
 
 # %% [markdown]
 """
@@ -36,6 +36,38 @@ configuration. In particular, {py:class}`pydantic_sweep.BaseModel` configures
 While we check for these settings as part of our {any}`check_model` and 
 {any}`initialize` methods, these checks are not exhaustive and it may be possible to 
 induce unexpected behaviors.
+
+## Model Unions
+
+As mentioned in {doc}`nested`, `pydantic`'s default behavior for matching submodels 
+allows for ambiguity when partial data could match multiple models:
+"""
+
+# %%
+import pydantic
+
+
+class Sub1(pydantic.BaseModel):
+    x: int
+
+
+class Sub2(pydantic.BaseModel):
+    x: int
+
+
+class Model(pydantic.BaseModel):
+    sub: Sub1 | Sub2
+
+
+pprint(Model(sub=dict(x=1)))
+
+# %% [markdown]
+"""
+For the purpose of configuration, this automatic model selection is undesired. To 
+avoid this kind of unsafe behavior, {any}`pydantic_sweep.BaseModel` includes a custom
+[model_validator](https://docs.pydantic.dev/latest/concepts/validators/#model-before
+-validator) that makes sure only one of the models matches. Other validations are 
+left to the core `pydantic` code.
 
 ## Leaf values
 
