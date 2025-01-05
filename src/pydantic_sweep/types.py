@@ -3,15 +3,17 @@ from __future__ import annotations
 from collections.abc import Hashable, Iterable
 from typing import Protocol, TypeAlias, TypeVar, Union
 
+import pydantic
+
 __all__ = [
     "Chainer",
     "Combiner",
     "Config",
+    "FieldValue",
     "Path",
     "StrictPath",
 ]
 
-T = TypeVar("T")
 
 StrictPath: TypeAlias = tuple[str, ...]
 """A tuple-path of keys for a pydantic model."""
@@ -19,12 +21,18 @@ StrictPath: TypeAlias = tuple[str, ...]
 Path: TypeAlias = Iterable[str] | str
 """Anything that can be converted to a tuple-path (str or iterable of str)."""
 
-Config: TypeAlias = dict[str, Union[Hashable, "Config"]]
-"""A nested config dictionary for configurations.
+FieldValue: TypeAlias = Hashable | pydantic.BaseModel
+"""The possible values that should be assigned to a field.
 
-Fields should be hashable (and therefore immutable). That makes them safer to use in 
-a configuration, unlike mutable types that may be modified inplace.
+Fields should be hashable (and therefore immutable) values. That makes them safer to 
+use in a configuration, since unlike mutable types they can not be modified inplace.
 """
+
+Config: TypeAlias = dict[str, Union[FieldValue, "Config"]]
+"""A nested config dictionary for configurations."""
+
+
+T = TypeVar("T")
 
 
 class Combiner(Protocol[T]):

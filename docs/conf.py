@@ -62,10 +62,10 @@ nitpick_ignore = [
     ("py:obj", "T"),
     ("py:class", "Ellipsis"),
     # These are somehow not found
-    ("py:class", "pydantic_sweep.types.ModelType"),
     ("py:class", "pydantic_sweep.types.Config"),
     ("py:class", "pydantic_sweep.types.Path"),
     ("py:class", "pydantic_sweep.types.StrictPath"),
+    ("py:class", "pydantic_sweep.types.FieldValue"),
 ]
 napoleon_use_rtype = False
 

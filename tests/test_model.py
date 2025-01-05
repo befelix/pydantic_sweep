@@ -161,6 +161,17 @@ class TestField:
 
         assert str(DefaultValue) == "DefaultValue"
 
+    def test_check(self):
+        with pytest.raises(ValueError):
+            field("a", [dict(a=1)])
+
+        res = field("a", [dict(a=1)], check=False)
+        assert res == [dict(a=dict(a=1))]
+
+    def test_iterator_values(self):
+        res = field("a", iter(range(2)), check=True)
+        assert res == [dict(a=0), dict(a=1)]
+
 
 class TestInitialize:
     def test_basic(self):
