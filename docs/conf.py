@@ -49,10 +49,12 @@ default_role = "any"
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# intersphinx_mapping = {
-#     "python": ("https://docs.python.org/3", None),
-#     "collections": ("https://docs.python.org/3/library/collections", None),
-# }
+# Add links to other libraries
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "more_itertools": ("https://more-itertools.readthedocs.io/en/stable", None),
+    "pydantic": ("https://docs.pydantic.dev/latest/", None),
+}
 
 nitpick_ignore = [
     ("py:class", "collections.abc.Iterable"),

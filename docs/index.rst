@@ -1,6 +1,8 @@
 .. include:: ../README.md
     :parser: myst_parser.sphinx_
 
+To get to know the library, please proceed to the :doc:`notebooks/intro` tutorial.
+
 .. toctree::
    :maxdepth: 2
    :hidden:

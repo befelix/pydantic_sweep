@@ -54,5 +54,5 @@ To learn mode about the full capabilities of the library visit the
 You can install the library by checking out the repo and running
 
 ```bash
-pip install 'pydantic_sweep'
+pip install 'pydantic-sweep'
 ```
