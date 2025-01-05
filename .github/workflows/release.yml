@@ -5,13 +5,8 @@ on:
     types: [published]
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      # This permission is mandatory for Trusted Publishing
-      # https://docs.pypi.org/trusted-publishers/using-a-publisher/
-      id-token: write
 
     steps:
       - name: Checkout code
@@ -34,8 +29,46 @@ jobs:
               exit 1;
             fi
 
-      - name: Build
+      - name: Build Wheel
         run: uv build --out-dir ./dist .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 'pypi-dist'
+          path: './dist'
+          if-no-files-found: 'error'
+
+      - name: Build Documentation
+        run: |
+          uv run --group doc \
+            sphinx-build \
+              --jobs 2 \
+              --fail-on-warning \
+              -b html \
+              docs \
+              docs/_build/html
+
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy-pypi:
+    runs-on: ubuntu-latest
+    needs: ["build"]
+    environment: pypi
+    permissions:
+      # This permission is mandatory for Trusted Publishing
+      # https://docs.pypi.org/trusted-publishers/using-a-publisher/
+      id-token: write
+
+    steps:
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: 'pypi-dist'
+          path: './dist'
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -44,3 +77,17 @@ jobs:
           # repository-url: https://test.pypi.org/legacy/
           skip-existing: true
           print-hash: true
+
+  deploy-docs:
+    runs-on: ubuntu-latest
+    needs: ["build"]
+    permissions:
+      pages: write      # permissions to deploy to Pages
+      id-token: write   # verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
