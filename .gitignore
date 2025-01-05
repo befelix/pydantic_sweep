@@ -15,6 +15,7 @@ wheels/
 # IDEs
 .idea
 .vscode
+.ipynb_checkpoints
 
 # docs
 docs/_build
