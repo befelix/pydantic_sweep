@@ -1,6 +1,6 @@
 import itertools
 import types
-from collections.abc import Iterable
+from collections.abc import Hashable, Iterable
 from functools import partial
 from typing import Any, Self, TypeVar, overload
 
@@ -18,7 +18,7 @@ from pydantic_sweep._utils import (
     normalize_path,
     notebook_link,
 )
-from pydantic_sweep.types import Chainer, Combiner, Config, Path
+from pydantic_sweep.types import Chainer, Combiner, Config, FieldValue, Path
 
 __all__ = [
     "BaseModel",
@@ -297,12 +297,15 @@ def initialize(
     models = [model(**config) for config in configs]
 
     if to is not None:
-        return field(to, models)
+        # Check not needed here: values are all pydantic.BaseModel by design
+        return field(to, models, check=False)
     else:
         return models
 
 
-def field(path: Path, /, values: Iterable) -> list[Config]:
+def field(
+    path: Path, /, values: Iterable[FieldValue], *, check: bool = True
+) -> list[Config]:
     """Assign various values to a field in a pydantic Model.
 
     Parameters
@@ -314,6 +317,8 @@ def field(path: Path, /, values: Iterable) -> list[Config]:
         The different values that should be assigned to the field. Note that the
         `DefaultValue` class has a special meaning, since it will be effectively
         ignored, allowing it to be kept to the default model.
+    check
+        If ``True``, check that values are indeed hashable or pydantic Models.
 
     Returns
     -------
@@ -341,6 +346,18 @@ def field(path: Path, /, values: Iterable) -> list[Config]:
     path = normalize_path(path, check_keys=True)
     if isinstance(values, str):
         raise ValueError("values must be iterable, but got a string")
+
+    if check:
+        # Iterators may get exhausted
+        values = list(values)
+        for value in values:
+            # Note: DefaultValue is hashable
+            if not isinstance(value, pydantic.BaseModel | Hashable):
+                raise ValueError(
+                    f"Value {value} of type {type(value)} is not hashable, which can "
+                    f"cause unexpected behaviors. You can disable this check by "
+                    f"passing `check=False` as a keyword argument."
+                )
 
     return [nested_dict_at(path, value) for value in values]
 

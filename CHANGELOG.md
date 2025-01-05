@@ -3,6 +3,10 @@
 This page summarizes historic changes in the library. Please also see the
 [release page](https://github.com/befelix/pydantic_sweep/releases)
 
+## 0.3
+
+- `field` now checks that values are hashable by default. This can be disabled by 
+  setting `check=False`.
 
 ## 0.2
 
