@@ -1,8 +1,11 @@
 import copy
+import dataclasses
 
+import pydantic
 import pytest
 
 from pydantic_sweep._utils import (
+    as_hashable,
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_from_items,
@@ -81,15 +84,26 @@ def test_nested_dict_replace():
     assert d == d_orig, "In-place modification"
 
 
-def test_nested_dict_get():
-    d = dict(a=dict(b=dict(c=5)))
+class TestNestedDictGet:
+    def test_basic(self):
+        d = dict(a=dict(b=dict(c=5)))
 
-    assert nested_dict_get(d, "a") is d["a"]
-    assert nested_dict_get(d, "a.b") is d["a"]["b"]
-    assert nested_dict_get(d, "a.b.c") == 5
+        assert nested_dict_get(d, "a") is d["a"]
+        assert nested_dict_get(d, "a.b") is d["a"]["b"]
+        assert nested_dict_get(d, "a.b.c") == 5
 
-    with pytest.raises(KeyError):
-        nested_dict_get(d, "c")
+        with pytest.raises(KeyError):
+            nested_dict_get(d, "c")
+
+    def test_leaf(self):
+        d = dict(a=dict(b=2))
+        nested_dict_get(d, "a", leaf=False)
+        nested_dict_get(d, "a.b", leaf=True)
+
+        with pytest.raises(ValueError):
+            nested_dict_get(d, "a", leaf=True)
+        with pytest.raises(ValueError):
+            nested_dict_get(d, "a.b", leaf=False)
 
 
 def test_merge_dicts():
@@ -109,6 +123,65 @@ def test_merge_dicts():
     assert merge_nested_dicts(dict(a=1), dict(b=2), overwrite=True) == dict(a=1, b=2)
     assert merge_nested_dicts(dict(a=1), dict(a=2), overwrite=True) == dict(a=2)
     assert merge_nested_dicts(dict(a=dict(b=2)), dict(a=3), overwrite=True) == dict(a=3)
+
+
+class TestAsHashable:
+    def test_builtins(self):
+        hash(as_hashable(None)) == hash(None)
+        hash(as_hashable((1, 2))) == hash((1, 2))
+
+    def test_dict(self):
+        hash(as_hashable(dict(a=dict(b=2))))
+        assert as_hashable(dict(a=1, b=2)) == as_hashable(dict(b=2, a=1))
+
+        res1 = as_hashable(dict(a=1, b=dict(c=2)))
+        res2 = as_hashable(dict(b=dict(c=2), a=1))
+        assert res1 == res2
+
+        assert as_hashable(dict(a=1)) != as_hashable(dict(a=2))
+        assert as_hashable(dict(a=dict(b=1))) != as_hashable(dict(b=dict(a=1)))
+        assert as_hashable([1, 2]) != as_hashable((1, 2))
+
+    def test_pydantic(self):
+        class Sub(pydantic.BaseModel):
+            x: int
+
+        class Model(pydantic.BaseModel):
+            a: int
+            sub: Sub
+
+        hash(as_hashable(dict(a=1, b=dict(c=2))))
+        hash(as_hashable(dict(a=1, b=Model(a=1, sub=Sub(x=1)))))
+
+        class Model(pydantic.BaseModel):
+            a: int
+            b: int
+
+        assert as_hashable(Model(a=1, b=2)) == as_hashable(Model(b=2, a=1))
+
+        class Model1(pydantic.BaseModel):
+            x: int
+
+        class Model2(pydantic.BaseModel):
+            x: int
+
+        assert as_hashable(Model1(x=1)) != as_hashable(Model2(x=1))
+        assert as_hashable(Model1(x=1)) != as_hashable(dict(x=1))
+
+    def test_set(self):
+        hash(as_hashable(set([1, 2])))
+        assert as_hashable({1, 2}) == as_hashable({1, 2})
+        assert as_hashable({1, 2}) != as_hashable((1, 2))
+
+    def test_exception(self):
+        @dataclasses.dataclass
+        class Test:
+            x: int
+
+        t = Test(x=5)
+
+        with pytest.raises(TypeError):
+            as_hashable(t)
 
 
 def test_random_seeds():
