@@ -64,21 +64,6 @@ jobs:
         with:
           path: docs/_build/html
 
-  deploy:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: ["linux-high"]
-    permissions:
-      pages: write      # permissions to deploy to Pages
-      id-token: write   # verify the deployment originates from an appropriate source
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
   windows:
     name: "windows"
     runs-on: windows-latest
