@@ -11,13 +11,14 @@ from ._model import (
     field,
     initialize,
 )
-from ._utils import random_seeds
+from ._utils import as_hashable, random_seeds
 from ._version import __version__
 
 __all__ = [
     "BaseModel",
     "DefaultValue",
     "__version__",
+    "as_hashable",
     "check_model",
     "config_chain",
     "config_combine",

@@ -286,7 +286,7 @@ def initialize(
         if to is not None:
             raise ValueError("Only on of `path` and `at` can be provided, not both.")
 
-        subconfigs = [nested_dict_get(param, at) for param in configs]
+        subconfigs = [nested_dict_get(param, at, leaf=False) for param in configs]
         submodels = initialize(model, subconfigs)
         return [
             nested_dict_replace(param, path=at, value=submodel)

@@ -2,12 +2,15 @@ import copy
 import itertools
 import random
 import re
-from collections.abc import Iterable, Iterator
-from typing import Any, Literal, TypeVar
+from collections.abc import Hashable, Iterable, Iterator
+from typing import Any, Literal, TypeVar, overload
 
-from pydantic_sweep.types import Config, Path, StrictPath
+import pydantic
+
+from pydantic_sweep.types import Config, FieldValue, Path, StrictPath
 
 __all__ = [
+    "as_hashable",
     "items_skip",
     "merge_nested_dicts",
     "nested_dict_at",
@@ -64,17 +67,58 @@ def normalize_path(path: Path, /, *, check_keys: bool = False) -> StrictPath:
         return tuple(path)
 
 
-def nested_dict_get(d: dict, /, path: Path) -> Any:
-    """Return the value of a nested dict at a certain path."""
+@overload
+def nested_dict_get(d: Config, /, path: Path, *, leaf: Literal[True]) -> FieldValue: ...
+
+
+@overload
+def nested_dict_get(d: Config, /, path: Path, *, leaf: Literal[False]) -> Config: ...
+
+
+def nested_dict_get(
+    d: Config, /, path: Path, *, leaf: bool | None = None
+) -> Config | FieldValue:
+    """Return the value of a nested dict at a certain path.
+
+    Parameters
+    ----------
+    d
+        The config to check
+    path
+        A path that we want to resolve.
+    leaf
+        If ``True``, check that we return a leaf node. If ``False``, check that we
+        return a non-leaf node.
+
+    Raises
+    ------
+    AttributeError
+        If the path does not exist.
+    ValueError
+        If the result does not match what we specified in ``leaf``.
+    """
     path = normalize_path(path)
     for p in path:
-        d = d[p]
+        d = d[p]  # type: ignore[assignment]
+    if leaf is not None:
+        if leaf:
+            if isinstance(d, dict):
+                raise ValueError(
+                    f"Expected a leaf at path {_path_to_str(path)}, but got a "
+                    f"dictionary."
+                )
+        else:
+            if not isinstance(d, dict):
+                raise ValueError(
+                    f"Expected a non-leaf node at path {_path_to_str(path)}, but got "
+                    f"{type(d)}."
+                )
     return d
 
 
 def nested_dict_replace(
-    d: dict, /, path: Path, value: Any, *, inplace: bool = False
-) -> dict:
+    d: Config, /, path: Path, value: FieldValue, *, inplace: bool = False
+) -> Config:
     """Replace the value of a nested dict at a certain path (out of place)."""
     if not inplace:
         d = copy.deepcopy(d)
@@ -100,12 +144,12 @@ def nested_dict_replace(
     return d
 
 
-def nested_dict_at(path: Path, value: Any) -> dict[str, Any]:
+def nested_dict_at(path: Path, value: FieldValue) -> Config:
     """Return nested dictionary with the value at path."""
     return nested_dict_from_items([(path, value)])
 
 
-def nested_dict_from_items(items: Iterable[tuple[Path, Any]], /) -> dict[str, Any]:
+def nested_dict_from_items(items: Iterable[tuple[Path, FieldValue]], /) -> Config:
     """Convert paths and values (items) to a nested dictionary.
 
     Paths are assumed as single dot-separated strings.
@@ -148,8 +192,8 @@ def nested_dict_from_items(items: Iterable[tuple[Path, Any]], /) -> dict[str, An
 
 
 def nested_dict_items(
-    d: dict[str, Any], /, path: Path = ()
-) -> Iterator[tuple[StrictPath, Any]]:
+    d: Config, /, path: Path = ()
+) -> Iterator[tuple[StrictPath, FieldValue]]:
     """Yield paths and leaf values of a nested dictionary.
 
     >>> list(nested_dict_items(dict(a=dict(b=3), c=2)))
@@ -206,6 +250,40 @@ def items_skip(items: Iterable[tuple[K, V]], target: Any) -> Iterator[tuple[K, V
     for key, value in items:
         if value is not target:
             yield key, value
+
+
+def as_hashable(item: Any, /) -> Hashable:
+    """Convert input into a unique, hashable representation.
+
+    In addition to the builtin hashable types, this also works for dictionaries and
+    pydantic Models (recursively). Sets and lists are also supported, but not dealt
+    with recursively.
+
+    Parameters
+    ----------
+    item
+        The item that we want to convert to something hashable.
+
+    Returns
+    -------
+    Hashable
+        A hashable representation of the item.
+    """
+    match item:
+        case Hashable():
+            return item
+        case pydantic.BaseModel():
+            return f"pydantic:{item.__class__}:{item.model_dump_json()}"
+        case dict():
+            return frozenset(
+                ((key, as_hashable(value)) for key, value in nested_dict_items(item))
+            )
+        case set():
+            return frozenset(item)
+        case list():
+            return ("__list_type", tuple(item))
+        case _:
+            raise TypeError(f"Unhashable object of type {type(item)}")
 
 
 def random_seeds(num: int, *, upper: int = 1000) -> list[int]:
