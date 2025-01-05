@@ -8,6 +8,7 @@ import more_itertools
 import pydantic
 
 from pydantic_sweep._utils import (
+    as_hashable,
     items_skip,
     merge_nested_dicts,
     nested_dict_at,
@@ -24,6 +25,7 @@ __all__ = [
     "BaseModel",
     "DefaultValue",
     "check_model",
+    "check_unique",
     "config_chain",
     "config_combine",
     "config_product",
@@ -452,3 +454,36 @@ def config_roundrobin(*configs: Iterable[Config]) -> list[Config]:
     [{'a': 1}, {'b': 3}, {'a': 2}, {'b': 4}, {'a': 3}]
     """
     return config_combine(*configs, chainer=more_itertools.roundrobin)
+
+
+def check_unique(
+    *models_: Config | pydantic.BaseModel | Iterable[Config | pydantic.BaseModel],
+    raise_exception: bool = True,
+) -> bool:
+    """Check that models are unique.
+
+    Parameters
+    ----------
+    *models_
+        Iterables of models to check for uniqueness. If multiple are passed, they are
+        chained together and jointly checked.
+
+    Raises
+    ------
+    ValueError
+        If models are not unique.
+    """
+    seen = set()
+    for models in models_:
+        if isinstance(models, pydantic.BaseModel | dict):
+            models = [models]
+        for model in models:
+            model_hash = hash(as_hashable(model))
+            if model_hash in seen:
+                if raise_exception:
+                    raise ValueError(f"The following model is not unique: {model}.")
+                else:
+                    return False
+            seen.add(model_hash)
+
+    return True

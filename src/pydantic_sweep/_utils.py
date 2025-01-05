@@ -273,7 +273,13 @@ def as_hashable(item: Any, /) -> Hashable:
         case Hashable():
             return item
         case pydantic.BaseModel():
-            return f"pydantic:{item.__class__}:{item.model_dump_json()}"
+            # Cannot use model_dump here, since that would map different models with
+            # the same attribute to the same keys. Don't need frozenset, since key
+            # order is deterministic
+            model_dump = tuple(
+                (key, as_hashable(getattr(item, key))) for key in item.model_fields
+            )
+            return f"pydantic:{item.__class__}:{model_dump}"
         case dict():
             return frozenset(
                 ((key, as_hashable(value)) for key, value in nested_dict_items(item))

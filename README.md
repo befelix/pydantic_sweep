@@ -44,6 +44,9 @@ models = [
     Model(seed=44, x=5, y=1), 
     Model(seed=44, x=6, y=2),
 ]
+
+# check that we didn't accidentally duplicate a setting
+ps.check_unique(models)
 ```
 
 To learn mode about the full capabilities of the library visit the

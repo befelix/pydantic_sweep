@@ -8,6 +8,7 @@ This page summarizes historic changes in the library. Please also see the
 - `field` now checks that values are hashable by default. This can be disabled by 
   setting `check=False`.
 - Added `as_hashable` utility to easily compare different configs and pydantic Models.
+- Added `check_unique` utility to check whether models are unique.
 
 ## 0.2
 
