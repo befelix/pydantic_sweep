@@ -8,6 +8,7 @@ from pydantic_sweep._model import (
     BaseModel,
     DefaultValue,
     check_model,
+    check_unique,
     config_chain,
     config_product,
     config_roundrobin,
@@ -361,3 +362,40 @@ def test_default_override():
             field("a", [1.0]),
             field("a", [DefaultValue]),
         )
+
+
+def test_check_unique():
+    xs = field("a", [1, 2])
+    assert check_unique(xs, raise_exception=False)
+    assert not check_unique(xs, xs, raise_exception=False)
+    assert not check_unique([*xs, *xs], raise_exception=False)
+
+    class Sub(BaseModel):
+        x: int = 0
+
+    class Model(BaseModel):
+        sub: Sub = Sub()
+        y: int = 0
+
+    assert check_unique(
+        [Model(), Model(sub=Sub(x=1)), Model(y=1)], raise_exception=False
+    )
+    assert not check_unique(
+        [Model(y=1), Model(sub=Sub(x=1)), Model(y=1)], raise_exception=False
+    )
+
+    with pytest.raises(ValueError):
+        check_unique([Model(y=0), Model(y=0)])
+    check_unique([Model(y=0)])
+
+    class Sub2(Sub):
+        pass
+
+    # These should be marked as unique, since they are different model classes
+    check_unique([Model(sub=Sub()), Model(sub=Sub2())])
+
+    # Check individual models
+    check_unique(Model(y=0))
+    check_unique(Model(y=0), Model(y=1))
+    with pytest.raises(ValueError):
+        check_unique(Model(), Model())

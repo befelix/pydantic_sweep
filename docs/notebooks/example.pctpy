@@ -54,7 +54,7 @@ lstm_configs = ps.initialize(
 
 
 mlp_configs = ps.initialize(
-    LSTM,
+    MLP,
     to="network",
     configs=ps.field("num_layers", [ps.DefaultValue, 5]),
 )
@@ -84,6 +84,10 @@ models = ps.initialize(
         ),
     ),
 )
+
+# This will raise an exception if we accidentally duplicated a configuration
+ps.check_unique(models)
+
 pprint(models)
 
 # %% [markdown]
