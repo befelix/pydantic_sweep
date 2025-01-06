@@ -17,4 +17,4 @@ auto:
 	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) --ignore autoapi
 
 clean: Makefile
-	@rm -rf "$(BUILDDIR)" autoapi $(O)
+	@rm -rf "$(BUILDDIR)" autoapi jupyter_execute _build $(O)
