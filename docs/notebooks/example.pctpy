@@ -8,7 +8,7 @@ how to use the library. We start by defining nested models.
 
 # %%
 
-from pprint import pprint
+import pprint
 from typing import Literal
 
 import pydantic_sweep as ps
@@ -88,7 +88,7 @@ models = ps.initialize(
 # This will raise an exception if we accidentally duplicated a configuration
 ps.check_unique(models)
 
-pprint(models)
+pprint.pp(models)
 
 # %% [markdown]
 """

@@ -8,7 +8,7 @@ at any cost. However, by default `pydantic`'s behavior is unsafe:
 """
 
 # %%
-from pprint import pprint
+import pprint
 
 import pydantic
 
@@ -18,10 +18,11 @@ class Model(pydantic.BaseModel):
 
 
 m = Model(y=6)
-pprint(m)
+pprint.pp(m)
 
+# %%
 m.x = "not-a-number"
-pprint(m)
+pprint.pp(m)
 
 # %% [markdown]
 """
@@ -59,7 +60,7 @@ class Model(pydantic.BaseModel):
     sub: Sub1 | Sub2
 
 
-pprint(Model(sub=dict(x=1)))
+pprint.pp(Model(sub=dict(x=1)))
 
 # %% [markdown]
 """

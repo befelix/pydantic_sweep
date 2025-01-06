@@ -12,7 +12,7 @@ explicitly allows ambiguity, when multiple could match. Instead, `BaseModel` inc
 """
 
 # %%
-from pprint import pprint
+import pprint
 
 import pydantic
 
@@ -58,7 +58,7 @@ The `to` keyword is a shortcut to the following code, which first instantiates a
 # %%
 xs = ps.field("x", [1, 2])
 configs_m1 = ps.field("method", ps.initialize(Method1, xs))
-pprint(ps.initialize(Environment, configs_m1))
+pprint.pp(ps.initialize(Environment, configs_m1))
 
 # %% [markdown]
 """
@@ -67,7 +67,7 @@ For convenience, we can instead directly use the initialize `to` argument.`:
 
 # %%
 configs_m1 = ps.initialize(Method1, xs, to="method")
-pprint(ps.initialize(Environment, configs_m1))
+pprint.pp(ps.initialize(Environment, configs_m1))
 
 # %% [markdown]
 """
@@ -78,7 +78,7 @@ and then initialize a model `at` the respective field.
 # %%
 zs = ps.field("method.z", [3, 4])
 configs_m2 = ps.initialize(Method2, zs, at="method")
-pprint(ps.initialize(Environment, configs_m2))
+pprint.pp(ps.initialize(Environment, configs_m2))
 
 # %% [markdown]
 """
@@ -99,7 +99,7 @@ models = ps.initialize(
         ps.config_chain(configs_m1, configs_m2),
     ),
 )
-pprint(models)
+pprint.pp(models)
 
 # %% [markdown]
 """
