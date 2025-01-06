@@ -264,7 +264,9 @@ def initialize(
                 f"Expected dictionary for input 'constant', got '{type(constant)}'."
             )
 
-        constant = nested_dict_from_items(constant.items())
+        constant = nested_dict_from_items(
+            (normalize_path(key), value) for key, value in constant.items()
+        )
         configs = config_product(configs, [constant])
 
     # Remove placeholders now
@@ -277,7 +279,9 @@ def initialize(
             )
         # A DefaultValue as a default should not change anything
         default = nested_dict_from_items(
-            items_skip(default.items(), target=DefaultValue)
+            (normalize_path(key), value)
+            for key, value in default.items()
+            if value is not DefaultValue
         )
         configs = [
             merge_nested_dicts(default, param, overwrite=True) for param in configs

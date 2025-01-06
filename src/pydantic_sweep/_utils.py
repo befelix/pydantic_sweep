@@ -146,10 +146,11 @@ def nested_dict_replace(
 
 def nested_dict_at(path: Path, value: FieldValue) -> Config:
     """Return nested dictionary with the value at path."""
+    path = normalize_path(path)
     return nested_dict_from_items([(path, value)])
 
 
-def nested_dict_from_items(items: Iterable[tuple[Path, FieldValue]], /) -> Config:
+def nested_dict_from_items(items: Iterable[tuple[StrictPath, FieldValue]], /) -> Config:
     """Convert paths and values (items) to a nested dictionary.
 
     Paths are assumed as single dot-separated strings.
@@ -157,7 +158,7 @@ def nested_dict_from_items(items: Iterable[tuple[Path, FieldValue]], /) -> Confi
     result: dict[str, Any] = dict()
 
     for full_path, value in items:
-        *path, key = normalize_path(full_path)
+        *path, key = full_path
         node = result
 
         for part in path:
@@ -191,23 +192,28 @@ def nested_dict_from_items(items: Iterable[tuple[Path, FieldValue]], /) -> Confi
     return result
 
 
-def nested_dict_items(
-    d: Config, /, path: Path = ()
+def _nested_dict_items(
+    d: Config, /, path: StrictPath = ()
 ) -> Iterator[tuple[StrictPath, FieldValue]]:
-    """Yield paths and leaf values of a nested dictionary.
-
-    >>> list(nested_dict_items(dict(a=dict(b=3), c=2)))
-    [(('a', 'b'), 3), (('c',), 2)]
-    """
+    """See nested_dict_items"""
     path = normalize_path(path)
     if not isinstance(d, dict):
         raise ValueError(f"Expected a dictionary, got {d} of type {type(d)}.")
     for subkey, value in d.items():
         cur_path = (*path, subkey)
         if isinstance(value, dict):
-            yield from nested_dict_items(value, path=cur_path)
+            yield from _nested_dict_items(value, path=cur_path)
         else:
             yield cur_path, value
+
+
+def nested_dict_items(d: Config, /) -> Iterator[tuple[StrictPath, FieldValue]]:
+    """Yield paths and leaf values of a nested dictionary.
+
+    >>> list(nested_dict_items(dict(a=dict(b=3), c=2)))
+    [(('a', 'b'), 3), (('c',), 2)]
+    """
+    return _nested_dict_items(d)
 
 
 def merge_nested_dicts(*dicts: Config, overwrite: bool = False) -> Config:
