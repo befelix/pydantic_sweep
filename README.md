@@ -50,7 +50,7 @@ ps.check_unique(models)
 ```
 
 To learn mode about the full capabilities of the library visit the
-[documentation page](https://berkenkamp.me/pydantic_sweep/).
+[documentation page](https://pydantic-sweep.readthedocs.io).
 
 ## Installation
 
