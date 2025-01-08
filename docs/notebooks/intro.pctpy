@@ -83,15 +83,17 @@ that does not modify values.
 models = ps.initialize(
     Model,
     ps.field("y", [10, ps.DefaultValue]),
-    constant={"sub.x": 0},
-    default={"y": 0},
+    constant=dict(sub=dict(x=0)),
+    default=dict(y=0),
 )
 pprint.pp(models, width=45)
 
 # %% [markdown]
 """
 Note that while the original `Model` defines `y=6`, here the default value is `0` as 
-defined above.
+defined above. For convenience, it is also possible to provide dot-seperated 
+flattened dictionaries of the form `{"sub.x": 0}` for the `constant` and `default` 
+arguments.
 
 So far, we have encountered the two most important methods in this library: {any}`field`
 and {any}`initialize`. While these functions have a lot more features, so far we 

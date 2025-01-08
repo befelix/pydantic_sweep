@@ -245,10 +245,11 @@ def initialize(
         The partial config dictionaries that we want to initialize with pydantic.
     constant:
         Constant values that should be initialized for all models. These are safely
-        merged with the parameters.
+        merged with the parameters. Can be either a nested, or a flattened dictionary.
     default:
         Default parameter that are initialized for all models, but may be overwritten by
-        other fields without any error checking.
+        other fields without any error checking. Can be either a nested or a flattened
+        dictionary.
     to:
         If provided, will first initialize the model and then return a
         configuration dictionary that sets the model as the values at the given path.
