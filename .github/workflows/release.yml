@@ -38,21 +38,6 @@ jobs:
           path: './dist'
           if-no-files-found: 'error'
 
-      - name: Build Documentation
-        run: |
-          uv run --group doc --frozen -m sphinx \
-              --jobs 2 \
-              --fail-on-warning \
-              -b html \
-              docs \
-              docs/_build/html
-
-      - name: Upload static files as artifact
-        id: deployment
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/_build/html
-
   deploy-pypi:
     runs-on: ubuntu-latest
     needs: ["build"]
@@ -76,17 +61,3 @@ jobs:
           # repository-url: https://test.pypi.org/legacy/
           skip-existing: true
           print-hash: true
-
-  deploy-docs:
-    runs-on: ubuntu-latest
-    needs: ["build"]
-    permissions:
-      pages: write      # permissions to deploy to Pages
-      id-token: write   # verify the deployment originates from an appropriate source
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
