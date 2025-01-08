@@ -241,6 +241,14 @@ class TestInitialize:
         )
         assert res == [Model(sub=Sub(x=99), y=10)]
 
+        res = initialize(
+            Model,
+            field("sub.x", [DefaultValue]),
+            constant=dict(y=10),
+            default=dict(sub=dict(x=99)),
+        )
+        assert res == [Model(sub=Sub(x=99), y=10)]
+
     def test_constant(self):
         class Sub(BaseModel):
             x: int
@@ -259,6 +267,10 @@ class TestInitialize:
         assert res == [Model(sub=Sub(x=1), y=10), Model(sub=Sub(x=2), y=10)]
 
         res = initialize(Model, [dict()], constant={"sub.x": 0})
+        assert res == [Model(sub=Sub(x=0))]
+
+        # Provide nested diction config for constant
+        res = initialize(Model, [dict()], constant=dict(sub=dict(x=0)))
         assert res == [Model(sub=Sub(x=0))]
 
         with pytest.raises(TypeError):

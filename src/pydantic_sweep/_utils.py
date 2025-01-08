@@ -287,9 +287,7 @@ def as_hashable(item: Any, /) -> Hashable:
             )
             return f"pydantic:{item.__class__}:{model_dump}"
         case dict():
-            return frozenset(
-                ((key, as_hashable(value)) for key, value in nested_dict_items(item))
-            )
+            return frozenset((key, as_hashable(value)) for key, value in item.items())
         case set():
             return frozenset(item)
         case list():
