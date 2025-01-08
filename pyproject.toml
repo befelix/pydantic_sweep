@@ -28,7 +28,7 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/befelix/pydantic_sweep"
 Releases = "https://github.com/befelix/pydantic_sweep/releases"
-Documentation = "https://berkenkamp.me/pydantic_sweep"
+Documentation = "https://pydantic-sweep.readthedocs.io"
 
 [build-system]
 requires = ["hatchling"]

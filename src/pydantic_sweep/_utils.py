@@ -325,5 +325,7 @@ def random_seeds(num: int, *, upper: int = 1000) -> list[int]:
 
 def notebook_link(
     name: Literal["combinations", "example", "intro", "models", "nested"],
+    *,
+    version: Literal["stable", "latest"] = "stable",
 ) -> str:
-    return f"https://berkenkamp.me/pydantic_sweep/notebooks/{name}.html"
+    return f"https://pydantic-sweep.readthedocs.io/{version}/notebooks/{name}.html"
