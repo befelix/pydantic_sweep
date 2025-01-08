@@ -50,8 +50,7 @@ jobs:
 
       - name: Documentation
         run: |
-          uv run --group doc \
-            sphinx-build \
+          uv run --frozen --group doc -m sphinx \
               --jobs 2 \
               --fail-on-warning \
               -b html \
