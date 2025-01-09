@@ -50,21 +50,29 @@ def normalize_path(path: Path, /, *, check_keys: bool = False) -> StrictPath:
     check_keys :
         If ``True``, also check each individual key in a tuple path.
     """
-    if isinstance(path, str):
-        if not re.fullmatch(_STR_PATH_PATTERN, path):
-            raise ValueError(
-                "If provided as a string, the path must consist only of "
-                f"dot-separated keys. For example, 'my.key'. Got {path})"
-            )
-        return tuple(path.split("."))
-    else:
-        if check_keys:
-            for p in path:
-                if not re.fullmatch(_STR_KEY_PATTERN, p):
-                    raise ValueError(
-                        f"Paths can only contain letters and underscores, got {p}."
-                    )
-        return tuple(path)
+    match path:
+        case str():
+            if not re.fullmatch(_STR_PATH_PATTERN, path):
+                raise ValueError(
+                    "If provided as a string, the path must consist only of "
+                    f"dot-separated keys. For example, 'my.key'. Got {path})"
+                )
+            return tuple(path.split("."))
+        case tuple():
+            pass
+        case Iterable():
+            path = tuple(path)
+        case _:
+            raise ValueError(f"Expected a path, got {path}")
+
+    if check_keys:
+        for p in path:
+            if not re.fullmatch(_STR_KEY_PATTERN, p):
+                raise ValueError(
+                    f"Paths can only contain letters and underscores, got {p}."
+                )
+
+    return path
 
 
 @overload
