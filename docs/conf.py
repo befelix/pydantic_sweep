@@ -26,7 +26,6 @@ def import_file(file: Path, /):
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "pydantic_sweep"
-copyright = "2024, Felix Berkenkamp"
 author = "Felix Berkenkamp"
 release = import_file(MODULE_ROOT / "_version.py").__version__
 

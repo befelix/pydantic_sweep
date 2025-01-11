@@ -59,3 +59,18 @@ You can install the library by checking out the repo and running
 ```bash
 pip install 'pydantic-sweep'
 ```
+
+## License
+
+The main code-base is licensed under MPL-2.0 a weak copy-left license that allows 
+commercial use. See the 
+[license file](https://github.com/befelix/pydantic_sweep/blob/main/docs/LICENSE) for 
+the exact clauses and
+[this FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) for a high-level description.
+
+An exception from this are the documentation in the `docs` folder and this `README` 
+file, which are licensed under the 
+[0BSD](https://github.com/befelix/pydantic_sweep/blob/main/docs/LICENSE): a highly 
+permissive license that does not require attribution. That way, you are free to copy & 
+paste example code into your use-case. See 
+[here](https://choosealicense.com/licenses/0bsd/) for a high-level description.
