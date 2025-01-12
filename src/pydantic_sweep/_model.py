@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import itertools
 import types
 from collections.abc import Hashable, Iterable
 from functools import partial
-from typing import Any, Self, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 import more_itertools
 import pydantic
@@ -80,9 +82,14 @@ class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
                     # Any other type should not need validation, since either they
                     # can't match or, in the case of dictionaries, pydantic models
                     # are preferred under the best-match strategy.
-                    if isinstance(annotation, type) and issubclass(
-                        annotation, pydantic.BaseModel
-                    ):
+                    if not isinstance(annotation, type):
+                        continue
+                    try:
+                        issub = issubclass(annotation, pydantic.BaseModel)
+                    except TypeError:
+                        continue
+
+                    if issub:
                         try:
                             res = annotation.model_validate(value)
                         except pydantic.ValidationError:
@@ -121,7 +128,7 @@ class NameMetaClass(type):
 class DefaultValue(metaclass=NameMetaClass):
     """Indicator class for a default value in the ``field`` method."""
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+    def __new__(cls, *args: Any, **kwargs: Any) -> DefaultValue:
         raise TypeError("This is a sentinel value and not meant to be instantiated.")
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -342,8 +349,10 @@ def field(
     ...     y: int = 6
 
     >>> class Model(ps.BaseModel):
-    ...     sub: Sub = Sub()
+    ...     sub: Sub
     ...     seed: int = 5
+
+    >>> _ = Model.model_rebuild()
 
     >>> configs = ps.field("sub.x", [10, 20])
     >>> ps.initialize(Model, configs)

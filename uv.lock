@@ -1012,7 +1012,7 @@ wheels = [
 
 [[package]]
 name = "pydantic-sweep"
-version = "0.2.1"
+version = "0.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "more-itertools" },
@@ -1041,7 +1041,7 @@ doc = [
 [package.metadata]
 requires-dist = [
     { name = "more-itertools", specifier = "~=10.1" },
-    { name = "pydantic", specifier = "~=2.1" },
+    { name = "pydantic", specifier = "~=2.5" },
 ]
 
 [package.metadata.requires-dev]

@@ -18,11 +18,8 @@ jobs:
       with:
         version: "~=0.5.10"
 
-    - name: Install
-      run: uv sync --python 3.10 --resolution "lowest-direct"
-
     - name: Pytest
-      run: uv run pytest
+      run: uv run --group dev --python 3.10 --resolution "lowest-direct" pytest
 
   linux-high:
     name: "linux-high"
@@ -39,14 +36,14 @@ jobs:
 
       - name: Ruff
         run: |
-          uv run ruff format --check
-          uv run ruff check
+          uv run --frozen ruff format --check
+          uv run --frozen ruff check
 
       - name: Mypy
-        run: uv run mypy
+        run: uv run --frozen --group dev mypy
 
       - name: Pytest
-        run: uv run pytest
+        run: uv run --frozen --group dev pytest
 
       - name: Documentation
         run: |
@@ -77,4 +74,4 @@ jobs:
           version: "~=0.5.10"
 
       - name: Pytest
-        run: uv run pytest
+        run: uv run  --frozen --group dev pytest
