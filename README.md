@@ -68,8 +68,8 @@ commercial use. See the
 the exact clauses and
 [this FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) for a high-level description.
 
-An exception from this are the documentation in the `docs` folder and this `README` 
-file, which are licensed under the 
+An exception from this are the documentation in the `docs` and `example` folders  as
+well as this `README` file, which are licensed under the
 [0BSD](https://github.com/befelix/pydantic_sweep/blob/main/docs/LICENSE): a highly 
 permissive license that does not require attribution. That way, you are free to copy & 
 paste example code into your use-case. See 

@@ -3,7 +3,10 @@
 # Example
 
 In the following, we will conclude the tutorial with a somewhat realistic example of
-how to use the library. We start by defining nested models.
+how to use the library. We start by defining nested models. For a full example on how
+to connect your training scripts with `pydantic-sweep`, see the
+[example folder](https://github.com/befelix/pydantic_sweep/tree/main/example)
+in the GitHub repo.
 """
 
 # %%
