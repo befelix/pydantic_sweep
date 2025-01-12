@@ -8,6 +8,8 @@ This page summarizes historic changes in the library. Please also see the
 ### 0.3.2
 
 - Fix for Python 3.10
+- Add `example` folder
+- License documentation and examples under 0BSD
 
 ### 0.3.1
 
