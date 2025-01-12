@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "more-itertools~=10.1",
-    "pydantic~=2.1",
+    "pydantic~=2.5",
 ]
 
 [project.urls]
