@@ -8,6 +8,6 @@ build:
     python: "3.13"
   commands:
     - asdf plugin add uv
-    - asdf install uv 0.5.16
-    - asdf global uv 0.5.16
+    - asdf install uv 0.5.26
+    - asdf global uv 0.5.26
     - uv run --frozen --group doc -m sphinx --jobs 2 --fail-on-warning -b html docs $READTHEDOCS_OUTPUT/html

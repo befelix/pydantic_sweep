@@ -140,7 +140,7 @@ def nested_dict_replace(
         sub = node[key]
         if not isinstance(sub, dict):
             raise ValueError(
-                f"Expected a dictionary at {_path_to_str(subpath[:i+1])}, got {sub}."
+                f"Expected a dictionary at {_path_to_str(subpath[: i + 1])}, got {sub}."
             )
         node = sub
 
