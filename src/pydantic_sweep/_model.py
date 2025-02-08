@@ -201,6 +201,7 @@ def initialize(
     default: dict[str, Any] | None = None,
     to: Path,
     at: Path | None = None,
+    check: bool = True,
 ) -> list[Config]:
     pass
 
@@ -214,6 +215,7 @@ def initialize(
     default: dict[str, Any] | None = None,
     to: Path | None = None,
     at: Path,
+    check: bool = True,
 ) -> list[Config]:
     pass
 
@@ -227,6 +229,7 @@ def initialize(
     default: dict[str, Any] | None = None,
     to: None = None,
     at: None = None,
+    check: bool = True,
 ) -> list[pydantic.BaseModel]:
     pass
 
@@ -239,6 +242,7 @@ def initialize(
     default: dict[str, Any] | None = None,
     to: Path | None = None,
     at: Path | None = None,
+    check: bool = True,
 ) -> list[Config] | list[pydantic.BaseModel]:
     """Instantiate the models with the given parameters.
 
@@ -263,8 +267,11 @@ def initialize(
         Essentially a shortcut to first passing the models to ``field(to, models)``.
     at:
         If provided, will initialize the model at the given path in the configuration.
+    check:
+        Whether to apply error checks to model.
     """
-    check_model(model)
+    if check:
+        check_model(model)
 
     if constant is not None:
         if not isinstance(constant, dict):
