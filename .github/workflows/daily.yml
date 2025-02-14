@@ -1,0 +1,44 @@
+name: Daily Tests
+on:
+  schedule:
+    # Cron: minute, hour, day of month, month, day of week
+    # Every day at 7:07
+    - cron:  '7 7 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-low:
+    name: "linux-low"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        version: "~=0.6"
+        enable-cache: false
+    
+    - name: Extract latest pydantic version
+      run: |
+        PYDANTIC_VERSION=$(uv run --python ${{ matrix.python_version }} --with pydantic-sweep python -m pydantic_sweep._version)
+        echo "PYDANTIC_VERSION=$PYDANTIC_VERSION" >> "$GITHUB_ENV"
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: "v${{ env.PYDANTIC_VERSION }}"
+        # Only checkout files relevant to tests
+        sparse-checkout-cone-mode: false
+        sparse-checkout: |
+          tests
+          pyproject.toml
+          example
+
+    - name: Pytest
+      run: uvx --python ${{ matrix.python_version }} --with pydantic-sweep pytest tests
