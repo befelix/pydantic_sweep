@@ -132,6 +132,20 @@ class TestCheckModel:
         with pytest.raises(ValueError):
             check_model(Nested)
 
+    def test_arbitrary(self):
+        class A(pydantic.BaseModel, extra="forbid"):
+            x: int = 5
+
+        check_model(A)
+        check_model(A())
+
+        A.model_config["arbitrary_types_allowed"] = True
+
+        with pytest.raises(ValueError):
+            check_model(A)
+        with pytest.raises(ValueError):
+            check_model(A())
+
 
 class TestField:
     def test_invalid_path(self):
