@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import itertools
 import types
-from collections.abc import Hashable, Iterable
+from collections.abc import (
+    Hashable,
+    Iterable,
+    MutableMapping,
+    MutableSequence,
+    MutableSet,
+)
 from functools import partial
-from typing import Any, TypeVar, overload
+from typing import Any, Literal, TypeAlias, TypeVar, overload
 
 import more_itertools
 import pydantic
@@ -20,8 +26,9 @@ from pydantic_sweep._utils import (
     nested_dict_replace,
     normalize_path,
     notebook_link,
+    path_to_str,
 )
-from pydantic_sweep.types import Chainer, Combiner, Config, FieldValue, Path
+from pydantic_sweep.types import Chainer, Combiner, Config, FieldValue, Path, StrictPath
 
 __all__ = [
     "BaseModel",
@@ -38,9 +45,16 @@ __all__ = [
 ]
 
 T = TypeVar("T")
+Mutable: TypeAlias = MutableMapping | MutableSequence | MutableSet
 
 
-class BaseModel(pydantic.BaseModel, extra="forbid", validate_assignment=True):
+class BaseModel(
+    pydantic.BaseModel,
+    extra="forbid",
+    validate_assignment=True,
+    arbitrary_types_allowed=False,
+    validate_return=True,
+):
     """Base model with validation enabled by default."""
 
     @pydantic.model_validator(mode="before")
@@ -136,27 +150,50 @@ class DefaultValue(metaclass=NameMetaClass):
 
 
 def _check_model_config(
-    model: pydantic.BaseModel | type[pydantic.BaseModel], /
+    model: pydantic.BaseModel | type[pydantic.BaseModel], /, *, path: StrictPath
 ) -> None:
     config = model.model_config
     if "extra" not in config or config["extra"] != "forbid":
+        field_msg = f" at field {path_to_str(path)}" if path else ""
+        name = (
+            model.__class__.__name__
+            if isinstance(model, pydantic.BaseModel)
+            else model.__name__
+        )
         raise ValueError(
-            "Model must have extra=forbid option enabled. Without this, typos in "
-            "field names will be silently ignored."
+            f"Model {name}{field_msg} must have 'extra=forbid' option enabled. "
+            "Without this, typos in field names will be silently ignored."
+        )
+    if config.get("arbitrary_types_allowed", False):
+        field_msg = f" at field {path_to_str(path)}" if path else ""
+        name = (
+            model.__class__.__name__
+            if isinstance(model, pydantic.BaseModel)
+            else model.__name__
+        )
+        raise ValueError(
+            f"Model {name}{field_msg} must have 'arbitrary_types_allowed=False' set. "
+            "Configuration classes should be built with basic types only to ensure "
+            "that the configuration can be checked and serialized reliably."
         )
 
 
-def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None:
+def check_model(
+    model: pydantic.BaseModel | type[pydantic.BaseModel],
+    /,
+    *,
+    mutable: Literal["warn", "ignore", "raise"] = "warn",
+) -> None:
     """Best-effort check that the model has the correct configuration.
 
     This recurses into the models, but there's probably a way to achieve a
     false positive if one tries.
     """
-    to_check: list[Any] = [model]
+    to_check: list[tuple[StrictPath, Any]] = [((), model)]
     checked = set()
 
     while to_check:
-        model = to_check.pop()
+        path, model = to_check.pop()
 
         if isinstance(model, pydantic.BaseModel):
             name = model.__class__.__name__
@@ -171,15 +208,15 @@ def check_model(model: pydantic.BaseModel | type[pydantic.BaseModel], /) -> None
         if name in checked:
             continue
 
-        _check_model_config(model)
+        _check_model_config(model, path=path)
         checked.add(name)
 
-        for field in model.model_fields.values():
+        for name, field in model.model_fields.items():
             annotation = field.annotation
             if isinstance(annotation, types.UnionType):
-                to_check.extend(annotation.__args__)
+                to_check.extend([((*path, name), arg) for arg in annotation.__args__])
             else:
-                to_check.append(annotation)
+                to_check.append(((*path, name), annotation))
 
 
 def _config_prune_default(config: Config) -> Config:

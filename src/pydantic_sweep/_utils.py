@@ -22,6 +22,7 @@ __all__ = [
     "nested_dict_replace",
     "normalize_path",
     "notebook_link",
+    "path_to_str",
     "random_seeds",
 ]
 
@@ -38,7 +39,7 @@ _STR_KEY_PATTERN = re.compile(rf"^{valid_key_pattern}$")
 # $ - Matches the end of the string.
 
 
-def _path_to_str(p: Path, /) -> str:
+def path_to_str(p: Path, /) -> str:
     return p if isinstance(p, str) else ".".join(p)
 
 
@@ -114,13 +115,13 @@ def nested_dict_get(
         if leaf:
             if isinstance(d, dict):
                 raise ValueError(
-                    f"Expected a leaf at path {_path_to_str(path)}, but got a "
+                    f"Expected a leaf at path {path_to_str(path)}, but got a "
                     f"dictionary."
                 )
         else:
             if not isinstance(d, dict):
                 raise ValueError(
-                    f"Expected a non-leaf node at path {_path_to_str(path)}, but got "
+                    f"Expected a non-leaf node at path {path_to_str(path)}, but got "
                     f"{type(d)}."
                 )
     return d
@@ -140,14 +141,12 @@ def nested_dict_replace(
         sub = node[key]
         if not isinstance(sub, dict):
             raise ValueError(
-                f"Expected a dictionary at {_path_to_str(subpath[: i + 1])}, got {sub}."
+                f"Expected a dictionary at {path_to_str(subpath[: i + 1])}, got {sub}."
             )
         node = sub
 
     if final not in node:
-        raise KeyError(
-            f"The path '{_path_to_str(path)}' is not part of the dictionary."
-        )
+        raise KeyError(f"The path '{path_to_str(path)}' is not part of the dictionary.")
     else:
         node[final] = value
 
@@ -179,7 +178,7 @@ def nested_dict_from_items(items: Iterable[tuple[StrictPath, FieldValue]], /) ->
 
             if not isinstance(node, dict):
                 raise ValueError(
-                    f"In the configs, for '{_path_to_str(path)}' there are both a "
+                    f"In the configs, for '{path_to_str(path)}' there are both a "
                     f"value ({node}) and child nodes with values defined. "
                     "This means that these two configs would overwrite each other."
                 )
@@ -187,13 +186,13 @@ def nested_dict_from_items(items: Iterable[tuple[StrictPath, FieldValue]], /) ->
         if key in node:
             if isinstance(node[key], dict):
                 raise ValueError(
-                    f"In the configs, for '{_path_to_str(full_path)}' there are both a"
+                    f"In the configs, for '{path_to_str(full_path)}' there are both a"
                     f" value ({value}) and child nodes with values defined. "
                     "This means that these two configs would overwrite each other."
                 )
             else:
                 raise ValueError(
-                    f"The key {_path_to_str(full_path)} has conflicting values "
+                    f"The key {path_to_str(full_path)} has conflicting values "
                     f"assigned: {node[key]} and {value}."
                 )
         else:
