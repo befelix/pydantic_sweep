@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import itertools
 import types
-from collections.abc import (
-    Hashable,
-    Iterable
-)
+from collections.abc import Hashable, Iterable
 from functools import partial
-from typing import Any, Literal, TypeAlias, TypeVar, overload
+from typing import Any, Literal, TypeVar, overload
 
 import more_itertools
 import pydantic

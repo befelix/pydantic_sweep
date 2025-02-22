@@ -148,6 +148,7 @@ class TestCheckModel:
 
     def test_non_hashable(self):
         """Note: mutable types are not hashable."""
+
         class A(BaseModel):
             x: set
 
