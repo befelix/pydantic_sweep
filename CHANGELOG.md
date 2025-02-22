@@ -5,6 +5,10 @@ This page summarizes historic changes in the library. Please also see the
 
 ## 0.3
 
+### 0.3.3 (not released)
+- `check_model` now warns on non-hashable type hints
+- `check_model` now explicitly forbids the `arbitrary_types_allowed` pydantic setting.
+
 ### 0.3.2
 
 - Fix for Python 3.10

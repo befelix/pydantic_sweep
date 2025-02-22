@@ -146,6 +146,27 @@ class TestCheckModel:
         with pytest.raises(ValueError):
             check_model(A())
 
+    def test_non_hashable(self):
+        """Note: mutable types are not hashable."""
+        class A(BaseModel):
+            x: set
+
+        class B(BaseModel):
+            a: A
+
+        check_model(A, unhashable="ignore")
+        check_model(B, unhashable="ignore")
+        with pytest.warns(UserWarning, match="`a.x`"):
+            check_model(B)
+        with pytest.raises(ValueError, match="`a.x`"):
+            check_model(B, unhashable="raise")
+
+        class A(BaseModel):
+            y: list
+
+        with pytest.warns(UserWarning, match="`y`"):
+            check_model(A, unhashable="warn")
+
 
 class TestField:
     def test_invalid_path(self):

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import copy
+import enum
 import itertools
 import random
 import re
+import warnings
 from collections.abc import Hashable, Iterable, Iterator
 from typing import Any, Literal, TypeVar, overload
 
 import pydantic
+from typing_extensions import Self
 
 from pydantic_sweep.types import Config, FieldValue, Path, StrictPath
 
@@ -23,6 +26,7 @@ __all__ = [
     "normalize_path",
     "notebook_link",
     "path_to_str",
+    "raise_warn_ignore",
     "random_seeds",
 ]
 
@@ -336,3 +340,34 @@ def notebook_link(
     version: Literal["stable", "latest"] = "stable",
 ) -> str:
     return f"https://pydantic-sweep.readthedocs.io/{version}/notebooks/{name}.html"
+
+
+class RaiseWarnIgnore(enum.Enum):
+    """Actions for `raise_warn_ignore`."""
+
+    RAISE = "raise"
+    WARN = "warn"
+    IGNORE = "ignore"
+
+    @classmethod
+    def cast(cls, name: str | Self, /) -> Self:
+        try:
+            return cls(name)
+        except ValueError:
+            options = ", ".join([action.value for action in cls])
+            raise ValueError(f"{name} is not a valid action. Options are: {options}")
+
+
+def raise_warn_ignore(
+    message: str,
+    *,
+    action: Literal["raise", "warn", "ignore"] | RaiseWarnIgnore,
+    exception: type[Exception] = ValueError,
+    warning: type[Warning] = UserWarning,
+) -> None:
+    """Raise/warn/ignore depending on action input."""
+    action = RaiseWarnIgnore.cast(action)
+    if action is RaiseWarnIgnore.WARN:
+        warnings.warn(message, category=warning)
+    elif action is RaiseWarnIgnore.RAISE:
+        raise exception(message)
