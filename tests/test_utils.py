@@ -5,6 +5,7 @@ import pydantic
 import pytest
 
 from pydantic_sweep._utils import (
+    RaiseWarnIgnore,
     as_hashable,
     merge_nested_dicts,
     nested_dict_at,
@@ -12,6 +13,7 @@ from pydantic_sweep._utils import (
     nested_dict_get,
     nested_dict_replace,
     normalize_path,
+    raise_warn_ignore,
     random_seeds,
 )
 
@@ -190,3 +192,22 @@ def test_random_seeds():
         random_seeds(-1)
     with pytest.raises(ValueError):
         random_seeds(1, upper=0)
+
+
+def test_raise_warn_ignore():
+    class CustomException(Exception):
+        pass
+
+    class CustomWarning(UserWarning):
+        pass
+
+    raise_warn_ignore("blub", action="ignore")
+    with pytest.raises(CustomException, match="blub1"):
+        raise_warn_ignore("blub1", action="raise", exception=CustomException)
+    with pytest.warns(CustomWarning, match="blub2"):
+        raise_warn_ignore("blub2", action="warn", warning=CustomWarning)
+
+    with pytest.raises(ValueError, match="raise, warn, ignore"):
+        raise_warn_ignore("blub", action="OWEH")
+
+    raise_warn_ignore("blub", action=RaiseWarnIgnore.IGNORE)

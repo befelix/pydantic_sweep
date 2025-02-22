@@ -2,15 +2,9 @@ from __future__ import annotations
 
 import itertools
 import types
-from collections.abc import (
-    Hashable,
-    Iterable,
-    MutableMapping,
-    MutableSequence,
-    MutableSet,
-)
+from collections.abc import Hashable, Iterable
 from functools import partial
-from typing import Any, Literal, TypeAlias, TypeVar, overload
+from typing import Any, Literal, TypeVar, overload
 
 import more_itertools
 import pydantic
@@ -27,6 +21,7 @@ from pydantic_sweep._utils import (
     normalize_path,
     notebook_link,
     path_to_str,
+    raise_warn_ignore,
 )
 from pydantic_sweep.types import Chainer, Combiner, Config, FieldValue, Path, StrictPath
 
@@ -45,7 +40,6 @@ __all__ = [
 ]
 
 T = TypeVar("T")
-Mutable: TypeAlias = MutableMapping | MutableSequence | MutableSet
 
 
 class BaseModel(
@@ -149,30 +143,34 @@ class DefaultValue(metaclass=NameMetaClass):
         raise TypeError("This is a sentinel value and not meant to be subclassed.")
 
 
+def _field_str(t: Any, /, *, path: StrictPath) -> str:
+    """Field and type info at a given path.
+
+    >>> _field_str(5., path=())
+    'float'
+
+    >>> _field_str(5., path=("a", "b"))
+    'float at field `a.b`'
+    """
+    name = t.__name__ if hasattr(t, "__name__") else t.__class__.__name__
+    field_msg = f" at field `{path_to_str(path)}`" if path else ""
+    return f"{name}{field_msg}"
+
+
 def _check_model_config(
     model: pydantic.BaseModel | type[pydantic.BaseModel], /, *, path: StrictPath
 ) -> None:
     config = model.model_config
     if "extra" not in config or config["extra"] != "forbid":
-        field_msg = f" at field {path_to_str(path)}" if path else ""
-        name = (
-            model.__class__.__name__
-            if isinstance(model, pydantic.BaseModel)
-            else model.__name__
-        )
+        info = _field_str(model, path=path)
         raise ValueError(
-            f"Model {name}{field_msg} must have 'extra=forbid' option enabled. "
+            f"Model {info} must have 'extra=forbid' option enabled. "
             "Without this, typos in field names will be silently ignored."
         )
     if config.get("arbitrary_types_allowed", False):
-        field_msg = f" at field {path_to_str(path)}" if path else ""
-        name = (
-            model.__class__.__name__
-            if isinstance(model, pydantic.BaseModel)
-            else model.__name__
-        )
+        info = _field_str(model, path=path)
         raise ValueError(
-            f"Model {name}{field_msg} must have 'arbitrary_types_allowed=False' set. "
+            f"Model {info} must have 'arbitrary_types_allowed=False' set. "
             "Configuration classes should be built with basic types only to ensure "
             "that the configuration can be checked and serialized reliably."
         )
@@ -182,12 +180,19 @@ def check_model(
     model: pydantic.BaseModel | type[pydantic.BaseModel],
     /,
     *,
-    mutable: Literal["warn", "ignore", "raise"] = "warn",
+    unhashable: Literal["warn", "ignore", "raise"] = "warn",
 ) -> None:
     """Best-effort check that the model has the correct configuration.
 
     This recurses into the models, but there's probably a way to achieve a
     false positive if one tries.
+
+    Parameters
+    ----------
+    model :
+        The model to check.
+    unhashable :
+        The action to take when a non-hashable type hint is encountered in the mode.
     """
     to_check: list[tuple[StrictPath, Any]] = [((), model)]
     checked = set()
@@ -203,6 +208,14 @@ def check_model(
             name = model.__name__
         else:
             # Just a leaf node
+            if isinstance(model, type) and not issubclass(model, Hashable):
+                info = _field_str(model, path=path)
+                raise_warn_ignore(
+                    f"Non-hashable type {info}. These can often create issues with "
+                    f"serialization and can lead to accidental shared state between "
+                    f"different configuration objects.",
+                    action=unhashable,
+                )
             continue
 
         if name in checked:
@@ -525,6 +538,8 @@ def check_unique(
     *models_
         Iterables of models to check for uniqueness. If multiple are passed, they are
         chained together and jointly checked.
+    raise_exception :
+        If ``False``, return a boolean instead of raising an exception on failure.
 
     Raises
     ------
