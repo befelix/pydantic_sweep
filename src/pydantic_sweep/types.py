@@ -28,7 +28,7 @@ Fields should be hashable (and therefore immutable) values. That makes them safe
 use in a configuration, since unlike mutable types they can not be modified inplace.
 """
 
-Config: TypeAlias = dict[str, Union[FieldValue, "Config"]]
+Config: TypeAlias = dict[str, Union["FieldValue", "Config"]]
 """A nested config dictionary for configurations."""
 
 

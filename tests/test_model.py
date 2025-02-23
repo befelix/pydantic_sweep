@@ -1,7 +1,9 @@
-from typing import Annotated
+import typing
+from typing import Annotated, Any, Generic, TypeVar
 
 import pydantic
 import pytest
+import typing_extensions
 from pydantic import Discriminator, Tag
 
 from pydantic_sweep._model import (
@@ -56,6 +58,13 @@ class TestBaseModel:
         assert Model(sub=dict(x=1, y=2)) == Model(sub=Sub1(x=1, y=2))
         assert Model(sub=dict(x=1.0)) == Model(sub=Sub1(x=1.0))
 
+        # Old-style
+        class Model(BaseModel):
+            sub: Sub1 | Sub2
+
+        with pytest.raises(pydantic.ValidationError):
+            Model(sub=dict(x=1))
+
     def test_validation_discriminator(self):
         class Sub1(BaseModel):
             x: int
@@ -90,6 +99,28 @@ class TestBaseModel:
 
 
 class TestCheckModel:
+    def test_complex(self):
+        class Sub1(BaseModel):
+            name: typing.Literal["Sub1"]
+            x: int
+
+        class Sub2(BaseModel):
+            name: typing_extensions.Literal["Sub2"]
+            x: int
+
+        T = TypeVar("T", str, float)
+
+        class Model(BaseModel):
+            sub: Sub1 | Sub2
+            x: tuple = pydantic.Field(description="Testing")
+            y1: Annotated[int | Annotated[float, "s"], "Some number"]
+            y2: Annotated[int | float, "Some number"]
+            z: Annotated[None, "never a value"] = None
+            gen: Annotated[T | float, "doc"]
+            f: typing_extensions.Final[float] = 3.14
+
+        check_model(Model, unhashable="raise")
+
     def test_nested_fail(self):
         class A(pydantic.BaseModel):
             x: int
@@ -113,6 +144,16 @@ class TestCheckModel:
 
         check_model(Model2)
         check_model(Model2(x=5, a=dict(x=6)))
+
+    def test_subtype(self):
+        class A(pydantic.BaseModel):
+            x: int
+
+        class B(BaseModel):
+            x: tuple[A]
+
+        with pytest.raises(ValueError):
+            check_model(B)
 
     def test_union_types(self):
         class A(BaseModel):
@@ -146,6 +187,67 @@ class TestCheckModel:
         with pytest.raises(ValueError):
             check_model(A())
 
+    def test_generic(self):
+        T = TypeVar("T")
+
+        class A(BaseModel, Generic[T]):
+            x: T
+
+        # Unconstrained type variable
+        with pytest.warns(UserWarning, match="`x`"):
+            check_model(A)
+
+        T = TypeVar("T", bound=str)
+
+        class A(BaseModel, Generic[T]):
+            x: T
+
+        check_model(A)
+
+        T = TypeVar("T", str, float)
+
+        class A(BaseModel, Generic[T]):
+            x: T
+
+        check_model(A)
+
+        T = TypeVar("T", bound=list[set])
+
+        class A(BaseModel, Generic[T]):
+            x: T
+
+        with pytest.warns(UserWarning, match="`x`"):
+            check_model(A)
+
+    def test_generic_union(self):
+        T = TypeVar("T")
+
+        class Model(BaseModel):
+            x: T | int
+
+        with pytest.warns(UserWarning, match="`x`"):
+            check_model(Model)
+
+        T = TypeVar("T", str, float)
+
+        class Model(BaseModel):
+            x: T | int
+
+        check_model(Model)
+
+    def test_ellipsis(self):
+        class Model(BaseModel):
+            x: tuple[str, ...]
+
+        check_model(Model)
+
+    def test_any(self):
+        class Model(BaseModel):
+            x: tuple[Any, ...]
+
+        with pytest.warns(UserWarning, match="`x`"):
+            check_model(Model)
+
     def test_non_hashable(self):
         """Note: mutable types are not hashable."""
 
@@ -167,6 +269,34 @@ class TestCheckModel:
 
         with pytest.warns(UserWarning, match="`y`"):
             check_model(A, unhashable="warn")
+
+        class TD(typing_extensions.TypedDict):
+            x: int
+
+        class A(BaseModel):
+            t: TD
+
+        with pytest.warns(UserWarning, match="`t`"):
+            check_model(A, unhashable="warn")
+
+        class A(BaseModel):
+            x: int | Annotated[set, "set"]
+
+        with pytest.warns(UserWarning, match="`x`"):
+            check_model(A)
+
+    def test_non_hashable_nested(self):
+        class A(BaseModel):
+            x: tuple[tuple[list]]
+
+        with pytest.warns(UserWarning, match="`x`"):
+            check_model(A)
+
+        class A(BaseModel):
+            x: tuple[list[int]]
+
+        with pytest.warns(UserWarning, match="`x`"):
+            check_model(A)
 
 
 class TestField:

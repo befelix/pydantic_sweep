@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 import types
+import typing
 from collections.abc import Hashable, Iterable
 from functools import partial
 from typing import Any, Literal, TypeVar, overload
@@ -12,6 +13,7 @@ import pydantic
 from pydantic_sweep._utils import (
     as_hashable,
     items_skip,
+    iter_subtypes,
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_from_items,
@@ -74,19 +76,21 @@ class BaseModel(
                 except AttributeError:
                     continue
 
-                # Fields that are not Unions are safely resolved by pydantic
-                if not isinstance(field.annotation, types.UnionType):
-                    continue
-
                 # Discriminators are an alternative way to handle this
                 if field.discriminator is not None or any(
                     isinstance(m, pydantic.Discriminator) for m in field.metadata
                 ):
                     continue
 
+                # We focus on direct unions for now, since they will be the most
+                # common use-case. This does not check things like `tuple[Sub1 | Sub2]`.
+                origin = typing.get_origin(field.annotation)
+                if origin not in (typing.Union, types.UnionType):
+                    continue
+
                 # Manually validate each model.
                 matches = []
-                for annotation in field.annotation.__args__:
+                for annotation in typing.get_args(field.annotation):
                     # Any other type should not need validation, since either they
                     # can't match or, in the case of dictionaries, pydantic models
                     # are preferred under the best-match strategy.
@@ -99,7 +103,7 @@ class BaseModel(
 
                     if issub:
                         try:
-                            res = annotation.model_validate(value)
+                            res = annotation.model_validate(value)  # type: ignore[attr-defined]
                         except pydantic.ValidationError:
                             pass
                         else:
@@ -216,6 +220,15 @@ def check_model(
                     f"different configuration objects.",
                     action=unhashable,
                 )
+            # Quirk: typing.Any is Hashable
+            elif model is typing.Any:
+                field = path_to_str(path)
+                raise_warn_ignore(
+                    f"Unconstrained variable (type Any) at field `{field}`. These "
+                    f"cannot be validated by pydantic and are thus not suitable for "
+                    f"configuration classes.",
+                    action=unhashable,
+                )
             continue
 
         if name in checked:
@@ -226,10 +239,9 @@ def check_model(
 
         for name, field in model.model_fields.items():
             annotation = field.annotation
-            if isinstance(annotation, types.UnionType):
-                to_check.extend([((*path, name), arg) for arg in annotation.__args__])
-            else:
-                to_check.append(((*path, name), annotation))
+            if annotation is not None:
+                for sub_type in iter_subtypes(annotation):
+                    to_check.append(((*path, name), sub_type))  # noqa: PERF401
 
 
 def _config_prune_default(config: Config) -> Config:
