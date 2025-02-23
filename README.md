@@ -10,46 +10,57 @@ complex parameter sweeps over `pydantic` models in Python.
 
 **Highlights**:
 - Specify parameter sweeps in Python
-- Flexibility: specify complex parameter combinations by chaining simple operations
+- Flexibility: specify complex parameter combinations by chaining simple functional operations
 - Safety checks for parameter combinations (get meaningful errors early)
 - `pydantic` field validation
 
-For example, the following code will instantiate models with `(x=5, y=1)` and 
-(`x=6, y=2)` and try each of those with seed values of `seed=43` and `seed=44`, 
-leading to four different configurations:
+For example, the following code will instantiate models with `(x=5, sub=Sub1(s=1)` and 
+`(x=6, sub=Sub1(s=2)` and try each of those with seed values of `seed=43` and 
+`seed=44`, leading to four different configurations:
 
 ```python
 import pydantic_sweep as ps
 
+class Sub1(ps.BaseModel):
+    s: int = 5
+
+class Sub2(ps.BaseModel):
+    y: str = "hi"
+
 class Model(ps.BaseModel):
     seed: int = 42
     x: int = 5
-    y: int
+    sub: Sub1 | Sub2
 
-models = ps.initialize(
-    Model, 
-    ps.config_product(
-        ps.field("seed", [43, 44]),
-        ps.config_zip(
-            ps.field("x", [ps.DefaultValue, 6]),
-            ps.field("y", [1, 2]),
-        )
+# We want to test across two seeds
+configs = ps.config_product(
+    ps.field("seed", [43, 44]),
+    # And two specific Sub1 and `x` combinations
+    ps.config_zip(
+        ps.field("x", [ps.DefaultValue, 6]),
+        ps.field("sub.s", [1, 2]),
     )
 )
+# This includes safety checks that Sub1 / Sub2 are uniquely specified
+models = ps.initialize(Model, configs)
 
 # The code above is equivalent to
-models = [
-    Model(seed=43, x=5, y=1), 
-    Model(seed=43, x=6, y=2), 
-    Model(seed=44, x=5, y=1), 
-    Model(seed=44, x=6, y=2),
+models_manual = [
+    Model(seed=43, sub=Sub1(s=1)),
+    Model(seed=43, x=6, sub=Sub1(s=2)), 
+    Model(seed=44, sub=Sub1(s=1)),
+    Model(seed=44, x=6, sub=Sub1(s=2)), 
 ]
+assert models == models_manual
 
-# check that we didn't accidentally duplicate a setting
+# We can also check that we didn't accidentally duplicate a setting
 ps.check_unique(models)
 ```
 
-To learn mode about the full capabilities of the library visit the
+While in this toy example, manually specifying the combinations may still be viable, 
+the library allows infinitely combining different configs and sub-models, making it 
+a powerful tool for large-scale experiment definition.
+To learn mode about the capabilities of the library please visit the
 [documentation page](https://pydantic-sweep.readthedocs.io).
 
 ## Installation
