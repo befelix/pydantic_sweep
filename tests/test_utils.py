@@ -1,12 +1,17 @@
+import collections.abc
 import copy
 import dataclasses
+import typing
+from typing import Annotated, Any, TypeVar
 
 import pydantic
 import pytest
+import typing_extensions
 
 from pydantic_sweep._utils import (
     RaiseWarnIgnore,
     as_hashable,
+    iter_subtypes,
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_from_items,
@@ -211,3 +216,62 @@ def test_raise_warn_ignore():
         raise_warn_ignore("blub", action="OWEH")
 
     raise_warn_ignore("blub", action=RaiseWarnIgnore.IGNORE)
+
+
+def subtypes(x) -> set:
+    return set(iter_subtypes(x))
+
+
+class TestIterSubtypes:
+    def test_basic(self):
+        assert subtypes(float) == {float}
+        assert subtypes(int) == {int}
+        assert subtypes(None) == {None}
+
+        class Test(list):
+            """Custom type"""
+
+        assert subtypes(Test) == {Test}
+        assert subtypes(collections.abc.Sequence[str]) == {
+            collections.abc.Sequence,
+            str,
+        }
+
+    def test_old(self):
+        assert subtypes(typing.Dict) == {dict}  # noqa: UP006
+        assert subtypes(typing.List) == {list}  # noqa: UP006
+        assert subtypes(typing.List[typing.Dict]) == {list, dict}  # noqa: UP006
+        assert subtypes(typing.Sequence[str]) == {collections.abc.Sequence, str}  # noqa: UP006, RUF100
+
+    def test_final(self):
+        assert subtypes(typing.Final[str]) == {str}
+        assert subtypes(typing_extensions.Final[str]) == {str}
+
+    def test_generic(self):
+        T = TypeVar("T", bound=str | int)
+        assert subtypes(T) == {str, int}
+        T = TypeVar("T", str, int)
+        assert subtypes(T) == {str, int}
+        assert subtypes(T | float) == {str, int, float}
+        T = TypeVar("T")
+        assert subtypes(T) == {Any}
+
+    def test_alias(self):
+        assert subtypes(list[str]) == {list, str}
+        assert subtypes(list[str | float]) == {list, str, float}
+        assert subtypes(list[str | float]) == {list, str, float}
+        assert subtypes(set[tuple[str] | tuple[float, ...]]) == {set, tuple, str, float}
+
+    def test_generic_alias(self):
+        T = TypeVar("T")
+        assert subtypes(list[T]) == {list, typing.Any}
+        T = TypeVar("T", str, float)
+        assert subtypes(list[T]) == {list, str, float}
+
+    def test_annotated(self):
+        assert subtypes(Annotated[int, "blub"]) == {int}
+        assert subtypes(Annotated[int | Annotated[float, "s"], "blub"]) == {int, float}
+
+    def test_literal(self):
+        assert subtypes(typing.Literal["test", 1]) == {str, int}
+        assert subtypes(typing_extensions.Literal["test", 1]) == {str, int}

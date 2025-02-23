@@ -5,6 +5,8 @@ import enum
 import itertools
 import random
 import re
+import types
+import typing
 import warnings
 from collections.abc import Hashable, Iterable, Iterator
 from typing import Any, Literal, TypeVar, overload
@@ -32,6 +34,11 @@ __all__ = [
 
 
 T = TypeVar("T")
+GenericUnion = type(T | str)
+"""A Generic Union type"""
+
+SpecialGenericAlias = type(typing.List[str])  # noqa: UP006
+"""Old-style GenericAlias"""
 
 valid_key_pattern = r"[A-Za-z_][A-Za-z0-9_]*"
 # Valid python keys starts with letters and can contain numbers and underscores after
@@ -371,3 +378,51 @@ def raise_warn_ignore(
         warnings.warn(message, category=warning)
     elif action is RaiseWarnIgnore.RAISE:
         raise exception(message)
+
+
+def iter_subtypes(t: type, /) -> Iterator[type]:
+    """Iterate over all possible subtypes of the input type.
+
+    >>> list(iter_subtypes(str | int))
+    [<class 'str'>, <class 'int'>]
+
+    >>> T = TypeVar("T", bound=str)
+    >>> list(iter_subtypes(T | float | int))
+    [<class 'str'>, <class 'float'>, <class 'int'>]
+    """
+    origin = typing.get_origin(t)
+
+    match (origin, t):
+        case (typing.Annotated, _):
+            sub = typing.get_args(t)[0]
+            yield from iter_subtypes(sub)
+        case (typing.Union | types.UnionType, _):
+            for arg in typing.get_args(t):
+                yield from iter_subtypes(arg)
+        case (typing.Final, _):
+            yield from iter_subtypes(*typing.get_args(t))
+        case (typing.Literal, _):
+            for arg in typing.get_args(t):
+                yield type(arg)
+        case (_, types.GenericAlias() | SpecialGenericAlias()):  # type: ignore
+            # Generic alias: list[str], special: typing.List[str]
+            if origin is not None:
+                yield from iter_subtypes(origin)
+            for arg in typing.get_args(t):
+                if arg is not Ellipsis:
+                    yield from iter_subtypes(arg)
+        case (_, typing.TypeVar()):
+            if t.__bound__ is not None:
+                yield from iter_subtypes(t.__bound__)
+            elif t.__constraints__:
+                for constraint in t.__constraints__:
+                    yield from iter_subtypes(constraint)
+            else:
+                # Unconstrained typevar can take any value.
+                yield typing.Any
+        case _:
+            if origin is None:
+                yield t
+            else:
+                # Resolves special types like typing.List
+                yield origin
