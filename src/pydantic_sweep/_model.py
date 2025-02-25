@@ -215,9 +215,8 @@ def check_model(
             if isinstance(model, type) and not issubclass(model, Hashable):
                 info = _field_str(model, path=path)
                 raise_warn_ignore(
-                    f"Non-hashable type {info}. These can often create issues with "
-                    f"serialization and can lead to accidental shared state between "
-                    f"different configuration objects.",
+                    f"Non-hashable type {info}. These can lead to accidental "
+                    f"shared state between different configuration objects.",
                     action=unhashable,
                 )
             # Quirk: typing.Any is Hashable
@@ -333,7 +332,9 @@ def initialize(
         Whether to apply error checks to model.
     """
     if check:
-        check_model(model)
+        # Unhashable are not a deal-breaker on the model side, and we deal with them
+        # already on the parameter side.
+        check_model(model, unhashable="ignore")
 
     if constant is not None:
         if not isinstance(constant, dict):
