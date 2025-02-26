@@ -12,7 +12,7 @@ from ._model import (
     field,
     initialize,
 )
-from ._utils import as_hashable, random_seeds
+from ._utils import as_hashable, model_diff, random_seeds
 from ._version import __version__
 
 __all__ = [
@@ -29,6 +29,7 @@ __all__ = [
     "config_zip",
     "field",
     "initialize",
+    "model_diff",
     "random_seeds",
     "types",
 ]
