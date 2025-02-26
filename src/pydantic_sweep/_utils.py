@@ -3,12 +3,13 @@ from __future__ import annotations
 import copy
 import enum
 import itertools
+import operator
 import random
 import re
 import types
 import typing
 import warnings
-from collections.abc import Hashable, Iterable, Iterator
+from collections.abc import Callable, Hashable, Iterable, Iterator
 from typing import Any, Literal, TypeVar, overload
 
 import pydantic
@@ -20,6 +21,7 @@ __all__ = [
     "as_hashable",
     "items_skip",
     "merge_nested_dicts",
+    "model_diff",
     "nested_dict_at",
     "nested_dict_from_items",
     "nested_dict_get",
@@ -426,3 +428,77 @@ def iter_subtypes(t: type, /) -> Iterator[type]:
             else:
                 # Resolves special types like typing.List
                 yield origin
+
+
+def _model_diff_iter(
+    m1: pydantic.BaseModel,
+    m2: pydantic.BaseModel,
+    /,
+    *,
+    path: StrictPath = (),
+    compare: Callable[[Any, Any], bool],
+) -> Iterator[tuple[StrictPath, tuple]]:
+    """Iterator implementation for model_diff."""
+    for name in m1.model_fields:
+        value1 = getattr(m1, name)
+        value2 = getattr(m2, name)
+
+        v1_is_model = isinstance(value1, pydantic.BaseModel)
+        v2_is_model = isinstance(value2, pydantic.BaseModel)
+        if v1_is_model != v2_is_model:
+            yield (*path, name), (value1, value2)
+            continue
+        elif v1_is_model and type(value1) is type(value2):
+            yield from _model_diff_iter(
+                value1, value2, path=(*path, name), compare=compare
+            )
+            continue
+
+        if not compare(value1, value2):
+            yield (*path, name), (value1, value2)
+
+
+def model_diff(
+    m1: pydantic.BaseModel,
+    m2: pydantic.BaseModel,
+    /,
+    *,
+    compare: Callable[[Any, Any], bool] = operator.eq,
+) -> dict[str, Any]:
+    """Return a nested dictionary of model diffs.
+
+    That is, given two models this function iterates over all nested sub-model fields
+    and returns a nested dictionaries with leaf values that are tuples of the
+    corresponding value of the left model, and the value of the right model.
+
+    Parameters
+    ----------
+    m1 :
+        The first model
+    m2 :
+        The second model
+    compare :
+        Function to compare two elements, returns ``True`` if they are equal.
+
+    Examples
+    --------
+    >>> class Sub(pydantic.BaseModel):
+    ...     x: int = 0
+
+    >>> class Model(pydantic.BaseModel):
+    ...     s: Sub = Sub()
+    ...     y: int = 2
+
+    >>> model_diff(Model(s=Sub(x=1)), Model(s=Sub(x=2)))
+    {'s': {'x': (1, 2)}}
+
+    >>> model_diff(Model(), Model())
+    {}
+    """
+    if not isinstance(m1, pydantic.BaseModel):
+        raise ValueError("First model must be an instance of a pydantic BaseModel")
+    if not isinstance(m2, pydantic.BaseModel):
+        raise ValueError("First model must be an instance of a pydantic BaseModel")
+    if type(m1) is not type(m2):
+        raise ValueError("Must compare the same pydantic models")
+    return nested_dict_from_items(_model_diff_iter(m1, m2, compare=compare))

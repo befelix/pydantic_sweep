@@ -13,6 +13,7 @@ from pydantic_sweep._utils import (
     as_hashable,
     iter_subtypes,
     merge_nested_dicts,
+    model_diff,
     nested_dict_at,
     nested_dict_from_items,
     nested_dict_get,
@@ -275,3 +276,53 @@ class TestIterSubtypes:
     def test_literal(self):
         assert subtypes(typing.Literal["test", 1]) == {str, int}
         assert subtypes(typing_extensions.Literal["test", 1]) == {str, int}
+
+
+class TestModelDiff:
+    def test_not_a_model(self):
+        with pytest.raises(ValueError):
+            model_diff(None, None)
+
+    def test_basic(self):
+        class Sub(pydantic.BaseModel):
+            x: int = 0
+            y: int = 0
+
+        class Model(pydantic.BaseModel):
+            sub: Sub = Sub()
+            z: str = "hi"
+
+        assert not model_diff(Model(), Model())
+        assert model_diff(Sub(), Sub(x=1)) == dict(x=(0, 1))
+        assert model_diff(Sub(), Sub(x=1, y=2)) == dict(x=(0, 1), y=(0, 2))
+        assert model_diff(Model(), Model(sub=Sub(x=1))) == dict(sub=dict(x=(0, 1)))
+
+    def test_different_models(self):
+        class M(pydantic.BaseModel):
+            x: int = 0
+
+        class Y(pydantic.BaseModel):
+            x: int = 0
+
+        with pytest.raises(ValueError):
+            model_diff(M(), Y())
+
+    def test_unhashable(self):
+        class Model(pydantic.BaseModel):
+            x: list | tuple
+
+        # unhashable
+        assert not model_diff(Model(x=[1]), Model(x=[1]))
+        assert model_diff(Model(x=(1,)), Model(x=[1])) == dict(x=((1,), [1]))
+
+    def test_different_submodules(self):
+        class S1(pydantic.BaseModel):
+            x: int = 0
+
+        class S2(pydantic.BaseModel):
+            x: int = 0
+
+        class Model(pydantic.BaseModel):
+            sub: S1 | S2
+
+        assert model_diff(Model(sub=S1()), Model(sub=S2())) == dict(sub=(S1(), S2()))
