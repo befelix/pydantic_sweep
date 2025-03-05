@@ -9,7 +9,7 @@ import re
 import types
 import typing
 import warnings
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from typing import Any, Literal, TypeVar, overload
 
 import pydantic
@@ -430,37 +430,67 @@ def iter_subtypes(t: type, /) -> Iterator[type]:
                 yield origin
 
 
+class MissingMeta(type):
+    def __repr__(cls) -> str:
+        return "Missing"
+
+
+class Missing(metaclass=MissingMeta):
+    """A Missing value"""
+
+    pass
+
+
 def _model_diff_iter(
-    m1: pydantic.BaseModel,
-    m2: pydantic.BaseModel,
-    /,
-    *,
-    path: StrictPath = (),
-    compare: Callable[[Any, Any], bool],
+    m1: Any, m2: Any, *, path: StrictPath = (), compare: Callable[[Any, Any], bool]
 ) -> Iterator[tuple[StrictPath, tuple]]:
     """Iterator implementation for model_diff."""
-    for name in m1.model_fields:
-        value1 = getattr(m1, name)
-        value2 = getattr(m2, name)
+    # Different types are treated differently by design. One could in principle
+    # compare tuples and dicts, but given that the core usecase is pydantic models
+    # these will get normalized to the same type in any case.
+    if type(m1) is not type(m2):
+        yield path, (m1, m2)
+        return
 
-        v1_is_model = isinstance(value1, pydantic.BaseModel)
-        v2_is_model = isinstance(value2, pydantic.BaseModel)
-        if v1_is_model != v2_is_model:
-            yield (*path, name), (value1, value2)
-            continue
-        elif v1_is_model and type(value1) is type(value2):
-            yield from _model_diff_iter(
-                value1, value2, path=(*path, name), compare=compare
-            )
-            continue
+    match m1:
+        case pydantic.BaseModel():
+            # Thanks to previous check, we know they have the same keys
+            for name in m1.model_fields:
+                value1 = getattr(m1, name)
+                value2 = getattr(m2, name)
+                yield from _model_diff_iter(
+                    value1, value2, path=(*path, name), compare=compare
+                )
 
-        if not compare(value1, value2):
-            yield (*path, name), (value1, value2)
+        case Mapping():
+            keys = m1.keys() | m2.keys()
+            for key in keys:
+                if key not in m1:
+                    yield (*path, f"[{key}]"), (Missing, m2[key])
+                elif key not in m2:
+                    yield (*path, f"[{key}]"), (m1[key], Missing)
+                else:
+                    yield from _model_diff_iter(
+                        m1[key], m2[key], path=(*path, f"[{key}]"), compare=compare
+                    )
+
+        case Sequence() if not isinstance(m1, str):
+            for i, (v1, v2) in enumerate(
+                itertools.zip_longest(m1, m2, fillvalue=Missing)
+            ):
+                yield from _model_diff_iter(
+                    v1, v2, path=(*path, f"[{i}]"), compare=compare
+                )
+
+        case _:
+            # A leaf node that we cannot expand directly --> call standard comparator
+            if not compare(m1, m2):
+                yield path, (m1, m2)
 
 
 def model_diff(
-    m1: pydantic.BaseModel,
-    m2: pydantic.BaseModel,
+    m1: Any,
+    m2: Any,
     /,
     *,
     compare: Callable[[Any, Any], bool] = operator.eq,
@@ -474,9 +504,9 @@ def model_diff(
     Parameters
     ----------
     m1 :
-        The first model
+        The first model, or nested structure.
     m2 :
-        The second model
+        The second model, or nested structure
     compare :
         Function to compare two elements, returns ``True`` if they are equal.
 
@@ -495,10 +525,4 @@ def model_diff(
     >>> model_diff(Model(), Model())
     {}
     """
-    if not isinstance(m1, pydantic.BaseModel):
-        raise ValueError("First model must be an instance of a pydantic BaseModel")
-    if not isinstance(m2, pydantic.BaseModel):
-        raise ValueError("First model must be an instance of a pydantic BaseModel")
-    if type(m1) is not type(m2):
-        raise ValueError("Must compare the same pydantic models")
     return nested_dict_from_items(_model_diff_iter(m1, m2, compare=compare))

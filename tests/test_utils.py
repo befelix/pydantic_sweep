@@ -279,9 +279,8 @@ class TestIterSubtypes:
 
 
 class TestModelDiff:
-    def test_not_a_model(self):
-        with pytest.raises(ValueError):
-            model_diff(None, None)
+    def test_none(self):
+        assert not model_diff(None, None)
 
     def test_basic(self):
         class Sub(pydantic.BaseModel):
@@ -326,3 +325,13 @@ class TestModelDiff:
             sub: S1 | S2
 
         assert model_diff(Model(sub=S1()), Model(sub=S2())) == dict(sub=(S1(), S2()))
+
+    def test_list(self):
+        x1 = [0, 1, 2]
+        x2 = [0, 99, 2]
+        assert model_diff(x1, x2) == {"[1]": (1, 99)}
+
+    def test_dict(self):
+        d1 = dict(a="a", b="b", c="c")
+        d2 = dict(c="c", b="b", a=0)
+        assert model_diff(d1, d2) == {"[a]": ("a", 0)}
