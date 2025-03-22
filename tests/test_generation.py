@@ -21,7 +21,7 @@ class Model(BaseModel):
 
 class NestedModel(BaseModel):
     sub: Model = Model()
-    hidden_sub: tuple[Model] = ()
+    hidden_sub: list[Model] = pydantic.Field(default_factory=list)
 
 
 class TestModelToPython:
@@ -47,22 +47,28 @@ class TestModelToPython:
         with pytest.raises(ValueError):
             model_to_python(Model(x=1))
 
-    def test_basic(self):
-        self._test_generation(Model(x=1))
-        self._test_generation(Model(y="test"))
-        self._test_generation(Model(x=1, y="test"))
-        self._test_generation(Model(z=[1]))
-        self._test_generation(Model(a={1}))
-        self._test_generation(Model(b=1.0))
-        self._test_generation(Model(c=dict(a=1)))
-        self._test_generation(Model(d=(1,)))
+    @pytest.mark.parametrize(
+        "model",
+        [
+            Model(x=1),
+            Model(y="test"),
+            Model(x=1, y="test"),
+            Model(z=[1]),
+            Model(a={1}),
+            Model(b=1.0),
+            Model(c=dict(a=1)),
+            Model(d=(1,)),
+        ],
+    )
+    def test_basic(self, model: Model):
+        self._test_generation(model)
 
     def test_nested(self):
         self._test_generation(NestedModel())
         self._test_generation(NestedModel(sub=Model(x=5)))
 
     def test_nested_hidden(self):
-        # self._test_generation(NestedModel(hidden_sub=(Model(x=1),)))
+        self._test_generation(NestedModel(hidden_sub=[Model(x=1)]))
         self._test_generation(
-            NestedModel(hidden_sub=(Model(x=1, c=dict(a=5), a={1, "a"}),))
+            NestedModel(hidden_sub=[Model(x=1, c=dict(a=5), a={1, "a"})])
         )
