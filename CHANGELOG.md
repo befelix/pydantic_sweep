@@ -6,7 +6,8 @@ This page summarizes historic changes in the library. Please also see the
 ## 0.3
 
 ### 0.3.4
-- `check_model` does not output `unhashable` warnings
+- `check_model` does not output `unhashable` warnings.
+- Added `model_to_python` to generate executable Python code for a model.
 
 ### 0.3.3
 - `check_model` now warns on non-hashable type hints (can be configured)
