@@ -1,4 +1,5 @@
 from . import types
+from ._generation import model_to_python
 from ._model import (
     BaseModel,
     DefaultValue,
@@ -30,6 +31,7 @@ __all__ = [
     "field",
     "initialize",
     "model_diff",
+    "model_to_python",
     "random_seeds",
     "types",
 ]
