@@ -1,3 +1,4 @@
+import enum
 import runpy
 import sys
 import tempfile
@@ -10,6 +11,11 @@ from pydantic_sweep import BaseModel, convert
 from pydantic_sweep._generation import model_to_python
 
 
+class MyEnum(enum.Enum):
+    a = "a"
+    b = "b"
+
+
 class Model(BaseModel):
     x: int = 0
     y: str = ""
@@ -18,6 +24,8 @@ class Model(BaseModel):
     b: float = 0.0
     c: dict = pydantic.Field(default_factory=dict)
     d: tuple = ()
+    e: Path = Path("")
+    f: MyEnum = MyEnum.a
 
 
 class NestedModel(BaseModel):
@@ -59,6 +67,8 @@ class TestModelToPython:
             Model(b=1.0),
             Model(c=dict(a=1)),
             Model(d=(1,)),
+            Model(e=Path("/home")),
+            Model(f=MyEnum.b),
         ],
     )
     def test_basic(self, model: Model):
@@ -77,11 +87,22 @@ class TestModelToPython:
 
 @pytest.mark.parametrize("ext", ["json", "yaml", "py"])
 def test_conversion(tmp_path, ext):
-    model = Model(x=1, y="test", z=[1], a={1}, b=1.0, c=dict(a=1), d=(1,))
+    submodel = Model(
+        x=1,
+        y="test",
+        z=[1],
+        a={1},
+        b=1.0,
+        c=dict(a=1),
+        d=(1,),
+        e=Path("/test"),
+        f=MyEnum.b,
+    )
+    model = NestedModel(sub=submodel, hidden_sub=[submodel])
     if ext == "py":
         model_str = "model"
     else:
-        model_str = f"{Model.__module__}.{Model.__name__}"
+        model_str = f"{type(model).__module__}.{type(model).__name__}"
 
     file = tmp_path / f"model.{ext}"
     convert.write(file, model=model)
@@ -90,7 +111,17 @@ def test_conversion(tmp_path, ext):
 
 def test_conversion_entrypoint(tmp_path, monkeypatch):
     """Ring-conversion between JSON, YAML, and Python files."""
-    model = Model(x=1, y="test", z=[1], a={1}, b=1.0, c=dict(a=1), d=(1,))
+    model = Model(
+        x=1,
+        y="test",
+        z=[1],
+        a={1},
+        b=1.0,
+        c=dict(a=1),
+        d=(1,),
+        e=Path("/test"),
+        f=MyEnum.b,
+    )
     model_str = f"{Model.__module__}.{Model.__name__}"
     json_file = tmp_path / "model.json"
     yaml_file = tmp_path / "model.yaml"

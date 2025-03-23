@@ -40,17 +40,18 @@ def load(source: os.PathLike | str, /, *, model: str) -> pydantic.BaseModel:
     source = Path(source)
 
     if source.suffix == ".json":
-        import json
-
         with source.open("r") as file:
-            content = json.load(file)
-        return _import_module(model)(**content)
+            json_str = file.read()
+        cls = _import_module(model)
+        return cls.model_validate_json(json_str)
     elif source.suffix == ".yaml":
         import yaml  # type: ignore[import-untyped]
 
         with source.open("r") as file:
             content = yaml.safe_load(file)
-        return _import_module(model)(**content)
+
+        cls = _import_module(model)
+        return cls(**content)
     elif source.suffix == ".py":
         return runpy.run_path(str(source))[model]
     else:

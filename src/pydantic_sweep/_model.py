@@ -73,7 +73,7 @@ class BaseModel(
                 # extra items are handled by extra='forbid' model setting.
                 try:
                     field = fields[key]
-                except AttributeError:
+                except KeyError:
                     continue
 
                 # Discriminators are an alternative way to handle this
