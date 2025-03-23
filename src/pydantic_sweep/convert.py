@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pydantic
+from typing_extensions import Self
 
 from pydantic_sweep._generation import model_to_python
 
@@ -56,7 +57,13 @@ def load(source: os.PathLike | str, /, *, model: str) -> pydantic.BaseModel:
         raise ValueError(f"Unsupported file type: {source.suffix}")
 
 
-def write(target: os.PathLike | str, /, *, model: pydantic.BaseModel) -> None:
+def write(
+    target: os.PathLike | str,
+    /,
+    *,
+    model: pydantic.BaseModel,
+    yaml_options: dict[str, Any] | None = None,
+) -> None:
     """Write a model to a file.
 
     Parameters
@@ -66,6 +73,8 @@ def write(target: os.PathLike | str, /, *, model: pydantic.BaseModel) -> None:
         ``.py``.
     model :
         The pydantic model that we want to write to the file.
+    yaml_options :
+        Optional keyword-arguments passed to ``yaml.dump``.
     """
     target = Path(target)
     if target.exists():
@@ -79,10 +88,12 @@ def write(target: os.PathLike | str, /, *, model: pydantic.BaseModel) -> None:
 
         import yaml
 
+        if yaml_options is None:
+            yaml_options = dict()
         # This runs serializers properly (e.g., for Path / Enum objects)
         dump = json.loads(model.model_dump_json())
         with target.open("w") as f:
-            yaml.dump(dump, f)
+            yaml.dump(dump, f, **yaml_options)
     elif target.suffix == ".py":
         code = model_to_python(model)
         with target.open("w") as f:
@@ -97,30 +108,38 @@ class Config(pydantic.BaseModel, extra="forbid"):
     source: Path
     target: Path
     model: str
+    yaml_default_flow_style: bool
 
-
-def parse() -> Config:
-    parser = argparse.ArgumentParser(
-        "Convert Pydantic models between different python, json and yaml."
-    )
-    parser.add_argument("source", type=str, help="The file to convert from.")
-    parser.add_argument("target", type=str, help="The file to convert to.")
-    parser.add_argument(
-        "--model",
-        type=str,
-        default=None,
-        help=(
-            "The model: Either the dot-separated import path for the pydantic "
-            "Model that we want to load or, for python files, the name of the "
-            "variable where the model is stored inside of the file."
-        ),
-    )
-
-    args = parser.parse_args()
-    return Config(source=args.source, target=args.target, model=args.model)
+    @classmethod
+    def from_cli(cls) -> Self:
+        parser = argparse.ArgumentParser(
+            "Convert Pydantic models between different python, json and yaml."
+        )
+        parser.add_argument("source", type=str, help="The file to convert from.")
+        parser.add_argument("target", type=str, help="The file to convert to.")
+        parser.add_argument(
+            "--model",
+            type=str,
+            default=None,
+            help=(
+                "The model: Either the dot-separated import path for the pydantic "
+                "Model that we want to load or, for python files, the name of the "
+                "variable where the model is stored inside of the file."
+            ),
+        )
+        parser.add_argument(
+            "--yaml-default-flow-style",
+            action="store_true",
+            help="Use the default flow style for yaml.",
+        )
+        return cls(**vars(parser.parse_args()))
 
 
 if __name__ == "__main__":
-    config = parse()
+    config = Config.from_cli()
     model = load(config.source, model=config.model)
-    write(config.target, model=model)
+    write(
+        config.target,
+        model=model,
+        yaml_options={"default_flow_style": config.yaml_default_flow_style},
+    )
