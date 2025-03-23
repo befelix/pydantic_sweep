@@ -1065,11 +1065,17 @@ dependencies = [
     { name = "pydantic" },
 ]
 
+[package.optional-dependencies]
+yaml = [
+    { name = "pyyaml" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "ipython", version = "8.33.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "ipython", version = "9.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "mypy", extra = ["mypyc"] },
+    { name = "pydantic-sweep", extra = ["yaml"] },
     { name = "pytest" },
     { name = "pytest-sugar" },
     { name = "ruff" },
@@ -1090,12 +1096,15 @@ doc = [
 requires-dist = [
     { name = "more-itertools", specifier = "~=10.1" },
     { name = "pydantic", specifier = "~=2.5" },
+    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=5.0.0" },
 ]
+provides-extras = ["yaml"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "ipython", specifier = ">=8.30.0" },
     { name = "mypy", extras = ["mypyc"], specifier = ">=1.13.0" },
+    { name = "pydantic-sweep", extras = ["yaml"] },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest-sugar", specifier = ">=1.0.0" },
     { name = "ruff", specifier = ">=0.8.3" },
