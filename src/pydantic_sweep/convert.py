@@ -64,6 +64,8 @@ def write(
     *,
     model: pydantic.BaseModel,
     yaml_options: dict[str, Any] | None = None,
+    exclude_unset: bool = True,
+    exclude_defaults: bool = False,
 ) -> None:
     """Write a model to a file.
 
@@ -76,12 +78,18 @@ def write(
         The pydantic model that we want to write to the file.
     yaml_options :
         Optional keyword-arguments passed to ``yaml.dump``.
+    exclude_unset :
+        Exclude fields that don't have a value set.
+    exclude_defaults :
+        Exclude fields that have the default value set.
     """
     target = Path(target)
     if target.exists():
         raise FileExistsError(f"File already exists: {target}")
     if target.suffix == ".json":
-        dump = model.model_dump_json()
+        dump = model.model_dump_json(
+            exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
+        )
         with target.open("w") as f:
             f.write(dump)
     elif target.suffix == ".yaml":
@@ -92,11 +100,17 @@ def write(
         if yaml_options is None:
             yaml_options = dict()
         # This runs serializers properly (e.g., for Path / Enum objects)
-        dump = json.loads(model.model_dump_json())
+        dump = json.loads(
+            model.model_dump_json(
+                exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
+            )
+        )
         with target.open("w") as f:
             yaml.dump(dump, f, **yaml_options)
     elif target.suffix == ".py":
-        code = model_to_python(model)
+        code = model_to_python(
+            model, exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
+        )
         with target.open("w") as f:
             f.write(code)
     else:
@@ -110,6 +124,8 @@ class Config(pydantic.BaseModel, extra="forbid"):
     target: Path
     model: str
     yaml_default_flow_style: bool
+    exclude_defaults: bool = False
+    include_unset: bool = False
 
     @classmethod
     def from_cli(cls) -> Self:
@@ -129,6 +145,16 @@ class Config(pydantic.BaseModel, extra="forbid"):
             ),
         )
         parser.add_argument(
+            "--exclude-defaults",
+            action="store_true",
+            help="Exclude fields that have default values.",
+        )
+        parser.add_argument(
+            "--include-unset",
+            action="store_true",
+            help="Also include fields that have no values set.",
+        )
+        parser.add_argument(
             "--yaml-default-flow-style",
             action="store_true",
             help="Use the default flow style for yaml.",
@@ -142,5 +168,7 @@ if __name__ == "__main__":
     write(
         config.target,
         model=model,
+        exclude_defaults=config.exclude_defaults,
+        exclude_unset=not config.include_unset,
         yaml_options={"default_flow_style": config.yaml_default_flow_style},
     )

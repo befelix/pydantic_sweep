@@ -15,7 +15,8 @@ def model_to_python(
     model: pydantic.BaseModel,
     *,
     name: str = "model",
-    exclude_defaults: bool = True,
+    exclude_unset: bool = True,
+    exclude_defaults: bool = False,
     include: Collection[str] | Mapping[str, Any] | None = None,
 ) -> str:
     """Generate python code for a pydantic model.
@@ -41,7 +42,11 @@ def model_to_python(
     model_classes: set[type[object]] = set()
     lines: list[str] = []
     include = cast(None | dict | set[str], include)  # pydantic is too strict here
-    dump = model.model_dump(exclude_defaults=exclude_defaults, include=include)
+    dump = model.model_dump(
+        exclude_defaults=exclude_defaults,
+        exclude_unset=exclude_unset,
+        include=include,
+    )
 
     _add_python_code(
         model=model,
