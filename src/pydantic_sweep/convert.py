@@ -3,9 +3,10 @@ import importlib
 import os
 import runpy
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 import pydantic
+from typing_extensions import Self
 
 from pydantic_sweep._generation import model_to_python
 
