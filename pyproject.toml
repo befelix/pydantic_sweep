@@ -30,6 +30,11 @@ Repository = "https://github.com/befelix/pydantic_sweep"
 Releases = "https://github.com/befelix/pydantic_sweep/releases"
 Documentation = "https://pydantic-sweep.readthedocs.io"
 
+[project.optional-dependencies]
+yaml = [
+    "pyyaml>=5.0.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -39,6 +44,7 @@ path = "src/pydantic_sweep/_version.py"
 
 [dependency-groups]
 dev = [
+    "pydantic_sweep[yaml]",
     "pytest-sugar>=1.0.0",
     "pytest>=8.3.4",
     "ruff>=0.8.3",
@@ -55,6 +61,9 @@ doc = [
     "myst-nb>=1.1.2",
     "sphinx-copybutton>=0.5.2",
 ]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [tool.pytest.ini_options]
 testpaths = ["src", "tests"]

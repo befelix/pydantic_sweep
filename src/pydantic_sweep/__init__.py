@@ -1,5 +1,4 @@
 from . import types
-from ._generation import model_to_python
 from ._model import (
     BaseModel,
     DefaultValue,
@@ -28,10 +27,10 @@ __all__ = [
     "config_product",
     "config_roundrobin",
     "config_zip",
+    "convert",
     "field",
     "initialize",
     "model_diff",
-    "model_to_python",
     "random_seeds",
     "types",
 ]

@@ -7,7 +7,9 @@ This page summarizes historic changes in the library. Please also see the
 
 ### 0.3.4
 - `check_model` does not output `unhashable` warnings.
-- Added `model_to_python` to generate executable Python code for a model.
+- Added `pydantic_sweep.convert` to convert between json, yaml and Python code
+  dumps of pydantic Models. This is also an entrypoint that can be executed as
+  `python -m pydantic_sweep.convert source target --model 'path.to.Model'`
 
 ### 0.3.3
 - `check_model` now warns on non-hashable type hints (can be configured)

@@ -12,6 +12,7 @@ __all__ = ["model_to_python"]
 def model_to_python(
     model: pydantic.BaseModel,
     *,
+    name: str = "model",
     exclude_defaults: bool = True,
     include: Collection[str] | Mapping[str, Any] | None = None,
 ) -> str:
@@ -24,6 +25,8 @@ def model_to_python(
     ----------
     model :
         The model that we want to convert to Python code
+    name :
+        The name of the variable to which we assign the instantiated model.
     exclude_defaults :
         Whether to exclude default arguments.
     include :
@@ -40,7 +43,7 @@ def model_to_python(
 
     _add_python_code(
         model=model,
-        field_prefix="model = ",
+        field_prefix=f"{name} = ",
         dump=dump,
         indent=0,
         lines=lines,
@@ -52,6 +55,7 @@ def model_to_python(
 
 
 def _generate_imports(classes: Collection[type[object]], /) -> list[str]:
+    """Generate import statements for the given classes."""
     if len(set(cls.__name__ for cls in classes)) != len(classes):
         from collections import Counter
 
