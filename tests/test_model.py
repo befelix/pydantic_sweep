@@ -4,7 +4,7 @@ from typing import Annotated, Any, Generic, TypeVar
 import pydantic
 import pytest
 import typing_extensions
-from pydantic import Discriminator, Tag
+from pydantic import Discriminator, Tag, ValidationError
 
 from pydantic_sweep._model import (
     BaseModel,
@@ -23,22 +23,26 @@ from pydantic_sweep._model import (
 class TestBaseModel:
     def test_config(self):
         class Model(BaseModel):
-            x: int
+            x: int | float
 
         assert Model(x=5).x == 5
 
         # Wrong type for x
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Model(x=None)
 
         # Assign wrong type for x to instantiated model
         model = Model(x=5)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             model.x = None
 
         # Extra field
-        with pytest.raises(ValueError):
-            Model(x=5, y=6)
+        with pytest.raises(ValidationError):
+            Model(x=5, y=5)
+
+        # Extra model
+        with pytest.raises(ValidationError):
+            Model(x=5, y=dict(x=5))
 
     def test_validation(self):
         class Sub1(BaseModel):

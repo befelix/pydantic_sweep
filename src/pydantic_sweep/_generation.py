@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import contextlib
 from collections.abc import Collection, Generator, Mapping
+from enum import Enum
+from pathlib import Path
 from typing import Any, cast
 
 import pydantic
@@ -163,5 +165,11 @@ def _add_python_code(
                     model_classes=model_classes,
                     indent=indent + 1,
                 )
+    elif isinstance(dump, Enum):
+        enum_cls = _add_import(dump, model_classes=model_classes)
+        dump = f"{enum_cls}.{dump.name}"
+        lines.append(f"{whitespace}{field_prefix}{dump},")
     else:
+        if isinstance(dump, Path):
+            dump = str(dump)
         lines.append(f"{whitespace}{field_prefix}{dump!r},")
