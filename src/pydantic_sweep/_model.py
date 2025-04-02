@@ -236,7 +236,8 @@ def check_model(
         _check_model_config(model, path=path)
         checked.add(name)
 
-        for name, field in model.model_fields.items():
+        cls = type(model) if isinstance(model, pydantic.BaseModel) else model
+        for name, field in cls.model_fields.items():
             annotation = field.annotation
             if annotation is not None:
                 for sub_type in iter_subtypes(annotation):

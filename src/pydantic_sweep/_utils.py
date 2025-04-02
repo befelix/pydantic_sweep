@@ -305,7 +305,8 @@ def as_hashable(item: Any, /) -> Hashable:
             # the same attribute to the same keys. Don't need frozenset, since key
             # order is deterministic
             model_dump = tuple(
-                (key, as_hashable(getattr(item, key))) for key in item.model_fields
+                (key, as_hashable(getattr(item, key)))
+                for key in item.__class__.model_fields
             )
             return f"pydantic:{item.__class__}:{model_dump}"
         case dict():
@@ -448,14 +449,15 @@ def _model_diff_iter(
     # Different types are treated differently by design. One could in principle
     # compare tuples and dicts, but given that the core usecase is pydantic models
     # these will get normalized to the same type in any case.
-    if type(m1) is not type(m2):
+    cls = type(m1)
+    if cls is not type(m2):
         yield path, (m1, m2)
         return
 
     match m1:
         case pydantic.BaseModel():
             # Thanks to previous check, we know they have the same keys
-            for name in m1.model_fields:
+            for name in cls.model_fields:
                 value1 = getattr(m1, name)
                 value2 = getattr(m2, name)
                 yield from _model_diff_iter(

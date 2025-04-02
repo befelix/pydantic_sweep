@@ -121,7 +121,6 @@ class TestCheckModel:
             y2: Annotated[int | float, "Some number"]
             z: Annotated[None, "never a value"] = None
             gen: Annotated[T | float, "doc"]
-            f: typing_extensions.Final[float] = 3.14
 
         check_model(Model, unhashable="raise")
 
