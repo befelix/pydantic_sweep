@@ -15,7 +15,7 @@ from typing import Any, Literal, TypeVar, overload
 import pydantic
 from typing_extensions import Self
 
-from pydantic_sweep.types import Config, FieldValue, Path, StrictPath
+from pydantic_sweep.types import Config, FieldValue, FlexibleConfig, Path, StrictPath
 
 __all__ = [
     "as_hashable",
@@ -172,7 +172,9 @@ def nested_dict_at(path: Path, value: FieldValue) -> Config:
     return nested_dict_from_items([(path, value)])
 
 
-def nested_dict_from_items(items: Iterable[tuple[StrictPath, FieldValue]], /) -> Config:
+def nested_dict_from_items(
+    items: Iterable[tuple[StrictPath, FieldValue | Config]], /
+) -> Config:
     """Convert paths and values (items) to a nested dictionary.
 
     Paths are assumed as single dot-separated strings.
@@ -215,30 +217,32 @@ def nested_dict_from_items(items: Iterable[tuple[StrictPath, FieldValue]], /) ->
 
 
 def _nested_dict_items(
-    d: Config, /, path: StrictPath = ()
+    d: FlexibleConfig, /, path: StrictPath
 ) -> Iterator[tuple[StrictPath, FieldValue]]:
     """See nested_dict_items"""
-    path = normalize_path(path)
     if not isinstance(d, dict):
         raise ValueError(f"Expected a dictionary, got {d} of type {type(d)}.")
     for subkey, value in d.items():
-        cur_path = (*path, subkey)
+        cur_path = (*path, *normalize_path(subkey))
         if isinstance(value, dict):
             yield from _nested_dict_items(value, path=cur_path)
         else:
             yield cur_path, value
 
 
-def nested_dict_items(d: Config, /) -> Iterator[tuple[StrictPath, FieldValue]]:
+def nested_dict_items(d: FlexibleConfig, /) -> Iterator[tuple[StrictPath, FieldValue]]:
     """Yield paths and leaf values of a nested dictionary.
+
+    Note: This function has special handling for Paths, i.e., it will expand
+    dot-separated keys and tuples-keys into nested paths.
 
     >>> list(nested_dict_items(dict(a=dict(b=3), c=2)))
     [(('a', 'b'), 3), (('c',), 2)]
     """
-    return _nested_dict_items(d)
+    return _nested_dict_items(d, path=())
 
 
-def merge_nested_dicts(*dicts: Config, overwrite: bool = False) -> Config:
+def merge_nested_dicts(*dicts: FlexibleConfig, overwrite: bool = False) -> Config:
     """Merge multiple Config dictionaries into a single one.
 
     This function includes error checking for duplicate keys and accidental overwriting
@@ -267,6 +271,20 @@ def merge_nested_dicts(*dicts: Config, overwrite: bool = False) -> Config:
             node[final] = value
 
     return res
+
+
+class _NoSkip:
+    pass
+
+
+def _flexible_config_to_nested(
+    config: FlexibleConfig, /, skip: Any = _NoSkip
+) -> Config:
+    """Normalize a flexible config to a nested dictionary."""
+    items = nested_dict_items(config)
+    if skip is not _NoSkip:
+        items = items_skip(items, target=skip)
+    return nested_dict_from_items(items)
 
 
 K = TypeVar("K")

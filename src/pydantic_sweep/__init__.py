@@ -27,7 +27,6 @@ __all__ = [
     "config_product",
     "config_roundrobin",
     "config_zip",
-    "convert",
     "field",
     "initialize",
     "model_diff",

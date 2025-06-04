@@ -10,6 +10,7 @@ __all__ = [
     "Combiner",
     "Config",
     "FieldValue",
+    "FlexibleConfig",
     "Path",
     "StrictPath",
 ]
@@ -18,7 +19,7 @@ __all__ = [
 StrictPath: TypeAlias = tuple[str, ...]
 """A tuple-path of keys for a pydantic model."""
 
-Path: TypeAlias = Iterable[str] | str
+Path: TypeAlias = Union[Iterable[str], str, "StrictPath"]
 """Anything that can be converted to a tuple-path (str or iterable of str)."""
 
 FieldValue: TypeAlias = Hashable | pydantic.BaseModel
@@ -31,6 +32,10 @@ use in a configuration, since unlike mutable types they can not be modified inpl
 Config: TypeAlias = dict[str, Union["FieldValue", "Config"]]
 """A nested config dictionary for configurations."""
 
+FlexibleConfig: TypeAlias = Union[
+    dict["Path", Union["FieldValue", "FlexibleConfig"]], "Config"
+]
+"""A flexible config that allows any Path."""
 
 T = TypeVar("T")
 
@@ -47,5 +52,5 @@ class Chainer(Protocol[T]):
     def __call__(self, *configs: Iterable[T]) -> Iterable[T]: ...
 
 
-ModelType = TypeVar("ModelType", bound=pydantic.BaseModel)
+BaseModelT = TypeVar("BaseModelT", bound=pydantic.BaseModel)
 """TypeVar for a pydantic BaseModel."""

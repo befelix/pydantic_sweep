@@ -10,6 +10,7 @@ import typing_extensions
 
 from pydantic_sweep._utils import (
     RaiseWarnIgnore,
+    _flexible_config_to_nested,
     as_hashable,
     iter_subtypes,
     merge_nested_dicts,
@@ -46,6 +47,37 @@ def test_normalize_path():
         normalize_path(("a.b",), check_keys=True)
     with pytest.raises(ValueError):
         normalize_path(("0a.b",), check_keys=True)
+
+
+class TestNormalizeFlexibleConfig:
+    def test_basic(self):
+        assert _flexible_config_to_nested(dict(a=1, b=2)) == dict(a=1, b=2)
+        assert _flexible_config_to_nested({"a.b": 1}) == dict(a=dict(b=1))
+        assert _flexible_config_to_nested({("a", "b"): 1}) == dict(a=dict(b=1))
+        assert _flexible_config_to_nested(dict(a={"b.c": 1})) == dict(
+            a=dict(b=dict(c=1))
+        )
+
+    def test_nested(self):
+        assert _flexible_config_to_nested({"a.b.c": 1, "a.b.d": 2}) == dict(
+            a=dict(b=dict(c=1, d=2))
+        )
+        assert _flexible_config_to_nested({"a.b.c": 1, "a.b.d.e": 2}) == dict(
+            a=dict(b=dict(c=1, d=dict(e=2)))
+        )
+
+    def test_conflicts(self):
+        with pytest.raises(ValueError):
+            _flexible_config_to_nested({"a.b": 1, "a": 2})
+        with pytest.raises(ValueError):
+            _flexible_config_to_nested({"a": dict(b=1), "a.b": 2})
+        with pytest.raises(ValueError):
+            _flexible_config_to_nested({"a.b.c": 1, "a.b.c.d": 2})
+
+    def test_skip(self):
+        assert _flexible_config_to_nested({"a.c": None, "a.b": 2}, skip=None) == dict(
+            a=dict(b=2)
+        )
 
 
 class TestNestedDictFromItems:
