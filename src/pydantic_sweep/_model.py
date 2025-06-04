@@ -49,6 +49,7 @@ __all__ = [
     "config_zip",
     "field",
     "initialize",
+    "model_replace",
 ]
 
 T = TypeVar("T")
@@ -389,6 +390,51 @@ def initialize(
         return field(to, models, check=False)
     else:
         return models
+
+
+def model_replace(model: BaseModelT, *, values: FlexibleConfig) -> BaseModelT:
+    """Create a copy of the pydantic model with nested value replacement.
+
+    Parameters
+    ----------
+    model :
+        The pydantic model to replace the fields in.
+    values :
+        A dictionary of fields to overwrite in the model. This can be either a nested
+        dictionary or a flat dictionary. A `DefaultValue` in the dictionary means that
+        the field will take the default value from the base model.
+
+    Returns
+    -------
+    BaseModelT:
+        A new instance of the model with the fields replaced.
+    """
+    if not isinstance(values, dict):
+        raise TypeError(
+            f"Expected dictionary for input 'values', got '{type(values)}'."
+        )
+
+    model_dump = model.model_dump(exclude_defaults=True)
+
+    # We remove any paths with DefaultValue both from the model dump and values,
+    # so that pydantic uses whatever was the default.
+    config_items = []
+    for key, value in nested_dict_items(values):
+        if value is DefaultValue:
+            d = model_dump
+            *path, final = key
+            for subkey in path:
+                if subkey not in d:
+                    break
+                d = d[subkey]
+            if final in d:
+                del d[final]
+        else:
+            config_items.append((key, value))
+    config_values = nested_dict_from_items(config_items)
+
+    merged_config = merge_nested_dicts(model_dump, config_values, overwrite=True)
+    return model.model_validate(merged_config)
 
 
 def field(
