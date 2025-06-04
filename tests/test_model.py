@@ -17,6 +17,7 @@ from pydantic_sweep._model import (
     config_zip,
     field,
     initialize,
+    model_replace,
 )
 
 
@@ -580,3 +581,82 @@ def test_check_unique():
     check_unique(Model(y=0), Model(y=1))
     with pytest.raises(ValueError):
         check_unique(Model(), Model())
+
+
+class TestModelReplace:
+    def test_basic(self):
+        class M(BaseModel):
+            x: int = 0
+            y: int = 0
+
+        class B(BaseModel):
+            m: M = M()
+            z: int = 0
+
+        b = B(m=M(x=1, y=2), z=3)
+        b1 = model_replace(b, values={})
+        assert b1 == b
+        assert b1 is not b
+
+        b1 = model_replace(b, values={"m.x": 99})
+        assert b1 == B(m=M(x=99, y=2), z=3)
+        b1 = model_replace(b, values={("m", "x"): 99})
+        assert b1 == B(m=M(x=99, y=2), z=3)
+        b1 = model_replace(b, values=dict(m=dict(x=99)))
+        assert b1 == B(m=M(x=99, y=2), z=3)
+        b1 = model_replace(b, values=dict(m=dict(x=99, y=98)))
+        assert b1 == B(m=M(x=99, y=98), z=3)
+        b1 = model_replace(b, values=dict(m=M(x=99)))
+        assert b1 == B(m=M(x=99), z=3)
+
+    def test_errors(self):
+        class M(BaseModel):
+            x: int = 0
+            y: int = 0
+
+        class B(BaseModel):
+            m: M = M()
+
+        class A(BaseModel):
+            b: B = B()
+            z: int = 0
+
+        a = A(b=dict(m=M(x=1, y=2)), z=3)
+        # Providing conflicting values
+        with pytest.raises(ValueError):
+            model_replace(a, values={"b.m.x": 99, "b.m": dict(x=98)})
+
+        # Extra fields should not be allowed
+        with pytest.raises(ValueError):
+            model_replace(a, values={"b.m.z": 99})
+
+    def test_default(self):
+        class A(BaseModel):
+            x: int = 0
+            y: int = 0
+
+        class B(BaseModel):
+            a: A = A()
+
+        a = A(x=1, y=2)
+        a1 = model_replace(a, values={"x": DefaultValue})
+        assert a1 == A(x=0, y=a.y)
+        a1 = model_replace(a, values={"x": DefaultValue, "y": DefaultValue})
+        assert a1 == A()
+
+        # Deeper nesting
+        b = B(a=a)
+        b1 = model_replace(b, values={"a.x": DefaultValue})
+        assert b1 == B(a=A(x=0, y=b.a.y))
+
+        b = B()
+        b1 = model_replace(b, values={"a.x": DefaultValue})
+        assert b1 == b
+        assert b1 is not b
+
+        # conflicts
+        b = B(a=A(x=1, y=2))
+        b1 = model_replace(b, values={"a.x": DefaultValue, "a": DefaultValue})
+        assert b1 == B()
+        b1 = model_replace(b, values={"a": DefaultValue, "a.x": DefaultValue})
+        assert b1 == B()

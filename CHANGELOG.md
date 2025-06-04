@@ -12,6 +12,8 @@ This page summarizes historic changes in the library. Please also see the
   `python -m pydantic_sweep.convert source target --model 'path.to.Model'`
 - `initialize` now accepts any mixture of `str`, tuple, and dot-separated keys for
   `default` and `constant` values.
+- Added a `model_replace` method to create a copy of a pydantic model while
+  overwriting certain values.
 
 ### 0.3.3
 - `check_model` now warns on non-hashable type hints (can be configured)
