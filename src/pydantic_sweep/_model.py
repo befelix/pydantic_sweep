@@ -25,7 +25,15 @@ from pydantic_sweep._utils import (
     path_to_str,
     raise_warn_ignore,
 )
-from pydantic_sweep.types import Chainer, Combiner, Config, FieldValue, Path, StrictPath
+from pydantic_sweep.types import (
+    Chainer,
+    Combiner,
+    Config,
+    FieldValue,
+    ModelType,
+    Path,
+    StrictPath,
+)
 
 __all__ = [
     "BaseModel",
@@ -256,7 +264,7 @@ def _config_prune_default(config: Config) -> Config:
 
 @overload
 def initialize(
-    model: type[pydantic.BaseModel],
+    model: type[ModelType],
     configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
@@ -270,7 +278,7 @@ def initialize(
 
 @overload
 def initialize(
-    model: type[pydantic.BaseModel],
+    model: type[ModelType],
     configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
@@ -284,7 +292,7 @@ def initialize(
 
 @overload
 def initialize(
-    model: type[pydantic.BaseModel],
+    model: type[ModelType],
     configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
@@ -292,12 +300,12 @@ def initialize(
     to: None = None,
     at: None = None,
     check: bool = True,
-) -> list[pydantic.BaseModel]:
+) -> list[ModelType]:
     pass
 
 
 def initialize(
-    model: type[pydantic.BaseModel],
+    model: type[ModelType],
     configs: Iterable[Config],
     *,
     constant: dict[str, Any] | None = None,
@@ -305,7 +313,7 @@ def initialize(
     to: Path | None = None,
     at: Path | None = None,
     check: bool = True,
-) -> list[Config] | list[pydantic.BaseModel]:
+) -> list[Config] | list[ModelType]:
     """Instantiate the models with the given parameters.
 
     Parameters
