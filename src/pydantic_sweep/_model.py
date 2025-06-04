@@ -11,6 +11,7 @@ import more_itertools
 import pydantic
 
 from pydantic_sweep._utils import (
+    _flexible_config_to_nested,
     as_hashable,
     items_skip,
     iter_subtypes,
@@ -26,11 +27,12 @@ from pydantic_sweep._utils import (
     raise_warn_ignore,
 )
 from pydantic_sweep.types import (
+    BaseModelT,
     Chainer,
     Combiner,
     Config,
     FieldValue,
-    ModelType,
+    FlexibleConfig,
     Path,
     StrictPath,
 )
@@ -264,11 +266,11 @@ def _config_prune_default(config: Config) -> Config:
 
 @overload
 def initialize(
-    model: type[ModelType],
+    model: type[BaseModelT],
     configs: Iterable[Config],
     *,
-    constant: dict[str, Any] | None = None,
-    default: dict[str, Any] | None = None,
+    constant: FlexibleConfig | None = None,
+    default: FlexibleConfig | None = None,
     to: Path,
     at: Path | None = None,
     check: bool = True,
@@ -278,11 +280,11 @@ def initialize(
 
 @overload
 def initialize(
-    model: type[ModelType],
+    model: type[BaseModelT],
     configs: Iterable[Config],
     *,
-    constant: dict[str, Any] | None = None,
-    default: dict[str, Any] | None = None,
+    constant: FlexibleConfig | None = None,
+    default: FlexibleConfig | None = None,
     to: Path | None = None,
     at: Path,
     check: bool = True,
@@ -292,28 +294,28 @@ def initialize(
 
 @overload
 def initialize(
-    model: type[ModelType],
+    model: type[BaseModelT],
     configs: Iterable[Config],
     *,
-    constant: dict[str, Any] | None = None,
-    default: dict[str, Any] | None = None,
+    constant: FlexibleConfig | None = None,
+    default: FlexibleConfig | None = None,
     to: None = None,
     at: None = None,
     check: bool = True,
-) -> list[ModelType]:
+) -> list[BaseModelT]:
     pass
 
 
 def initialize(
-    model: type[ModelType],
+    model: type[BaseModelT],
     configs: Iterable[Config],
     *,
-    constant: dict[str, Any] | None = None,
-    default: dict[str, Any] | None = None,
+    constant: FlexibleConfig | None = None,
+    default: FlexibleConfig | None = None,
     to: Path | None = None,
     at: Path | None = None,
     check: bool = True,
-) -> list[Config] | list[ModelType]:
+) -> list[Config] | list[BaseModelT]:
     """Instantiate the models with the given parameters.
 
     Parameters
@@ -350,11 +352,7 @@ def initialize(
             raise TypeError(
                 f"Expected dictionary for input 'constant', got '{type(constant)}'."
             )
-
-        constant = nested_dict_from_items(
-            (normalize_path(key), value) for key, value in constant.items()
-        )
-        configs = config_product(configs, [constant])
+        configs = config_product(configs, [_flexible_config_to_nested(constant)])
 
     # Remove placeholders now
     configs = [_config_prune_default(config) for config in configs]
@@ -365,13 +363,10 @@ def initialize(
                 f"Expected dictionary for input 'default', got '{type(default)}'."
             )
         # A DefaultValue as a default should not change anything
-        default = nested_dict_from_items(
-            (normalize_path(key), value)
-            for key, value in default.items()
-            if value is not DefaultValue
-        )
+        default_config = _flexible_config_to_nested(default, skip=DefaultValue)
         configs = [
-            merge_nested_dicts(default, param, overwrite=True) for param in configs
+            merge_nested_dicts(default_config, param, overwrite=True)
+            for param in configs
         ]
 
     # Initialize a subconfiguration at the path ``at``

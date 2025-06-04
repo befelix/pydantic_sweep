@@ -10,6 +10,8 @@ This page summarizes historic changes in the library. Please also see the
 - Added `pydantic_sweep.convert` to convert between json, yaml and Python code
   dumps of pydantic Models. This is also an entrypoint that can be executed as
   `python -m pydantic_sweep.convert source target --model 'path.to.Model'`
+- `initialize` now accepts any mixture of `str`, tuple, and dot-separated keys for
+  `default` and `constant` values.
 
 ### 0.3.3
 - `check_model` now warns on non-hashable type hints (can be configured)
