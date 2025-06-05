@@ -21,7 +21,7 @@ m = Model(y=6)
 pprint.pp(m)
 
 # %%
-m.x = "not-a-number"
+m.x = "not-a-number"  # type: ignore[assignment]
 pprint.pp(m)
 
 # %% [markdown]
@@ -56,11 +56,11 @@ class Sub2(pydantic.BaseModel):
     x: int
 
 
-class Model(pydantic.BaseModel):
+class Model2(pydantic.BaseModel):
     sub: Sub1 | Sub2
 
 
-pprint.pp(Model(sub=dict(x=1)))
+pprint.pp(Model2(sub=dict(x=1)))
 
 # %% [markdown]
 """

@@ -5,7 +5,7 @@ import types
 import typing
 from collections.abc import Hashable, Iterable
 from functools import partial
-from typing import Any, Literal, TypeVar, overload
+from typing import Any, Literal, TypeVar, cast, overload
 
 import more_itertools
 import pydantic
@@ -260,7 +260,7 @@ def _config_prune_default(config: Config) -> Config:
 
     This allows pydantic to handle initialization of them.
     """
-    items = nested_dict_items(config)
+    items = nested_dict_items(cast(FlexibleConfig, config))
     items = items_skip(items, target=DefaultValue)
     return nested_dict_from_items(items)
 
@@ -366,7 +366,11 @@ def initialize(
         # A DefaultValue as a default should not change anything
         default_config = _flexible_config_to_nested(default, skip=DefaultValue)
         configs = [
-            merge_nested_dicts(default_config, param, overwrite=True)
+            merge_nested_dicts(
+                cast(FlexibleConfig, default_config),
+                cast(FlexibleConfig, param),
+                overwrite=True,
+            )
             for param in configs
         ]
 
@@ -433,7 +437,11 @@ def model_replace(model: BaseModelT, *, values: FlexibleConfig) -> BaseModelT:
             config_items.append((key, value))
     config_values = nested_dict_from_items(config_items)
 
-    merged_config = merge_nested_dicts(model_dump, config_values, overwrite=True)
+    merged_config = merge_nested_dicts(
+        cast(FlexibleConfig, model_dump),
+        cast(FlexibleConfig, config_values),
+        overwrite=True,
+    )
     return model.model_validate(merged_config)
 
 

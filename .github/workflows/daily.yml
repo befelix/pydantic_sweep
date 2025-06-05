@@ -41,4 +41,4 @@ jobs:
           example
 
     - name: Pytest
-      run: uvx --python ${{ matrix.python_version }} --with pydantic-sweep pytest tests
+      run: uvx --python ${{ matrix.python_version }} --with pydantic-sweep[yaml] pytest -m "not repo" tests
