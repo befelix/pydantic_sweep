@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).parents[1]
 README = ROOT / "README.md"
 
@@ -39,6 +41,7 @@ Some more text.
     assert extracted == [FUN1, FUN2]
 
 
+@pytest.mark.repo
 def test_readme():
     """Make sure the code in the readme can be executed."""
     with open(README) as f:

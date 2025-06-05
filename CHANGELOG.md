@@ -5,6 +5,10 @@ This page summarizes historic changes in the library. Please also see the
 
 ## 0.3
 
+### 0.3.5
+
+- Type hints have improved to avoid false positives on the user side.
+
 ### 0.3.4
 - `check_model` does not output `unhashable` warnings.
 - Added `pydantic_sweep.convert` to convert between json, yaml and Python code

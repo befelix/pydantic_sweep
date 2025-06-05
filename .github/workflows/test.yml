@@ -40,7 +40,13 @@ jobs:
           uv run --frozen ruff check
 
       - name: Mypy
-        run: uv run --frozen --group dev mypy
+        run: |
+          uv run --frozen --group dev mypy
+          uv run --frozen --group dev mypy docs/notebooks/combinations.pctpy
+          uv run --frozen --group dev mypy docs/notebooks/example.pctpy
+          uv run --frozen --group dev mypy docs/notebooks/intro.pctpy
+          uv run --frozen --group dev mypy docs/notebooks/models.pctpy
+          uv run --frozen --group dev mypy docs/notebooks/nested.pctpy
 
       - name: Pytest
         run: uv run --frozen --group dev pytest

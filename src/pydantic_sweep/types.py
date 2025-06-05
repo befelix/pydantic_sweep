@@ -19,7 +19,7 @@ __all__ = [
 StrictPath: TypeAlias = tuple[str, ...]
 """A tuple-path of keys for a pydantic model."""
 
-Path: TypeAlias = Union[Iterable[str], str, "StrictPath"]
+Path: TypeAlias = Union[str, Iterable[str], "StrictPath"]
 """Anything that can be converted to a tuple-path (str or iterable of str)."""
 
 FieldValue: TypeAlias = Hashable | pydantic.BaseModel
@@ -32,9 +32,7 @@ use in a configuration, since unlike mutable types they can not be modified inpl
 Config: TypeAlias = dict[str, Union["FieldValue", "Config"]]
 """A nested config dictionary for configurations."""
 
-FlexibleConfig: TypeAlias = Union[
-    dict["Path", Union["FieldValue", "FlexibleConfig"]], "Config"
-]
+FlexibleConfig: TypeAlias = dict["Path", Union["FieldValue", "FlexibleConfig"]]
 """A flexible config that allows any Path."""
 
 T = TypeVar("T")

@@ -68,6 +68,7 @@ nitpick_ignore = [
     ("py:class", "pydantic_sweep.types.StrictPath"),
     ("py:class", "pydantic_sweep.types.FieldValue"),
     ("py:class", "pydantic_sweep.types.BaseModelT"),
+    ("py:class", "pydantic_sweep.types._FlexibleConfig"),
     ("py:class", "pydantic_sweep.types.FlexibleConfig"),
 ]
 napoleon_use_rtype = False

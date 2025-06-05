@@ -69,6 +69,9 @@ default-groups = ["dev"]
 testpaths = ["src", "tests"]
 minversion = 8.3
 addopts = "-p 'no:legacypath' --doctest-modules"
+markers = [
+    "repo: Tests that require the repo to be cloned"
+]
 filterwarnings = [
     "error",
     # action:message:category:module:line
@@ -82,7 +85,7 @@ warn_unused_configs = true
 allow_redefinition = true
 disallow_untyped_defs = true
 disallow_untyped_calls= true
-files = ["src"]
+files = ["src", "example"]
 
 [tool.ruff]
 line-length = 88

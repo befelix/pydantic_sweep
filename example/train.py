@@ -21,7 +21,7 @@ def command_line_interface() -> ExperimentConfig:
     return ExperimentConfig.model_validate_json(json_config)
 
 
-def main(config: ExperimentConfig):
+def main(config: ExperimentConfig) -> None:
     """Main training function."""
     print(f"Execute main with: {config!r}")
     # Your favorite program goes here...
