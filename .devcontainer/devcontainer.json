@@ -1,0 +1,35 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".",
+    "options": [
+      "--network=host",
+    ],
+  },
+  "runArgs": [
+    "--shm-size=256m"
+  ],
+  "containerUser": "ubuntu",
+  "workspaceFolder": "/workdir",
+  "workspaceMount": "source=${localWorkspaceFolder},type=bind,target=/workdir",
+  "mounts": [
+    "type=bind,source=${localEnv:HOME}/.cache,target=/home/ubuntu/.cache",
+    "type=bind,source=${localEnv:HOME}/.ssh,target=/home/ubuntu/.ssh,readonly",
+    "type=bind,source=${localEnv:HOME}/Downloads,target=/home/ubuntu/Downloads",
+  ],
+  "postCreateCommand": "uv sync --frozen --all-groups --all-extras",
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "github.copilot",
+        "github.copilot-chat",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker",
+      ]
+    }
+  },
+}
