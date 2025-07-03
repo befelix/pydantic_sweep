@@ -47,6 +47,7 @@ dev = [
     "pydantic_sweep[yaml]",
     "pytest-sugar>=1.0.0",
     "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
     "ruff>=0.8.3",
     "mypy[mypyc]>=1.13.0",
     "ipython>=8.30.0",
@@ -68,7 +69,7 @@ default-groups = ["dev"]
 [tool.pytest.ini_options]
 testpaths = ["src", "tests"]
 minversion = 8.3
-addopts = "-p 'no:legacypath' --doctest-modules"
+addopts = "-p 'no:legacypath' --doctest-modules --cov=src/pydantic_sweep --cov-fail-under=90"
 markers = [
     "repo: Tests that require the repo to be cloned"
 ]

@@ -4,7 +4,6 @@ import itertools
 import types
 import typing
 from collections.abc import Hashable, Iterable
-from functools import partial
 from typing import Any, Literal, TypeVar, cast, overload
 
 import more_itertools
@@ -567,14 +566,17 @@ def config_product(*configs: Iterable[Config]) -> list[Config]:
     return config_combine(*configs, combiner=itertools.product)
 
 
+def _safe_zip(*configs: Iterable[Config]) -> Iterable[tuple[Config, ...]]:
+    return zip(*configs, strict=True)
+
+
 def config_zip(*configs: Iterable[Config]) -> list[Config]:
     """Return the zip-combination of configuration dictionaries.
 
     >>> config_zip(field("a", [1, 2]), field("b", [3, 4]))
     [{'a': 1, 'b': 3}, {'a': 2, 'b': 4}]
     """
-    safe_zip = partial(zip, strict=True)
-    return config_combine(*configs, combiner=safe_zip)
+    return config_combine(*configs, combiner=_safe_zip)
 
 
 def config_chain(*configs: Iterable[Config]) -> list[Config]:

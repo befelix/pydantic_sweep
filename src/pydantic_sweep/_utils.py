@@ -262,12 +262,12 @@ def merge_nested_dicts(*dicts: FlexibleConfig, overwrite: bool = False) -> Confi
     res: Config = dict()
     for d in dicts:
         for path, value in nested_dict_items(d):
-            node = res
+            node: dict = res
             *subpath, final = path
             for p in subpath:
                 if p not in node or not isinstance(node[p], dict):
                     node[p] = dict()
-                node = node[p]  # type: ignore[assignment]
+                node = node[p]
             node[final] = value
 
     return res

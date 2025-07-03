@@ -8,6 +8,8 @@ wheels/
 
 # Caches
 .*_cache
+.hypothesis
+.coverage
 
 # Virtual environments
 .venv
