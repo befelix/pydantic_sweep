@@ -5,6 +5,10 @@ This page summarizes historic changes in the library. Please also see the
 
 ## 0.3
 
+### 0.3.6
+
+- Fix `model_replace` for Union types
+
 ### 0.3.5
 
 - Type hints have improved to avoid false positives on the user side.
