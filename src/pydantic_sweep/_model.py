@@ -417,7 +417,7 @@ def model_replace(model: BaseModelT, *, values: FlexibleConfig) -> BaseModelT:
             f"Expected dictionary for input 'values', got '{type(values)}'."
         )
 
-    model_dump = model.model_dump(exclude_defaults=True)
+    model_dump = model.model_dump()
 
     # We remove any paths with DefaultValue both from the model dump and values,
     # so that pydantic uses whatever was the default.

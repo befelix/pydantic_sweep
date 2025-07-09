@@ -1,5 +1,5 @@
 import typing
-from typing import Annotated, Any, Generic, TypeVar
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pydantic
 import pytest
@@ -585,29 +585,56 @@ def test_check_unique():
 
 class TestModelReplace:
     def test_basic(self):
+        class Z(BaseModel):
+            x: int = 0
+            y: int = 0
+
         class M(BaseModel):
             x: int = 0
             y: int = 0
+            z: Z = Z()
 
         class B(BaseModel):
             m: M = M()
             z: int = 0
 
-        b = B(m=M(x=1, y=2), z=3)
+        b = B(m=M(x=1, y=2, z=Z(x=5)), z=3)
         b1 = model_replace(b, values={})
         assert b1 == b
         assert b1 is not b
 
+        b1 = model_replace(b, values={"m": {"x": 99}})
+        assert b1 == B(m=M(x=99, y=b.m.y, z=Z(x=5)), z=3)
+
+        b1 = model_replace(b, values={"m": {"z": {"x": 99}}})
+        assert b1 == B(m=M(x=b.m.x, y=b.m.y, z=Z(x=99)), z=3)
+
         b1 = model_replace(b, values={"m.x": 99})
-        assert b1 == B(m=M(x=99, y=2), z=3)
+        assert b1 == B(m=M(x=99, y=2, z=Z(x=5)), z=3)
         b1 = model_replace(b, values={("m", "x"): 99})
-        assert b1 == B(m=M(x=99, y=2), z=3)
+        assert b1 == B(m=M(x=99, y=2, z=Z(x=5)), z=3)
         b1 = model_replace(b, values=dict(m=dict(x=99)))
-        assert b1 == B(m=M(x=99, y=2), z=3)
+        assert b1 == B(m=M(x=99, y=2, z=Z(x=5)), z=3)
         b1 = model_replace(b, values=dict(m=dict(x=99, y=98)))
-        assert b1 == B(m=M(x=99, y=98), z=3)
+        assert b1 == B(m=M(x=99, y=98, z=Z(x=5)), z=3)
         b1 = model_replace(b, values=dict(m=M(x=99)))
         assert b1 == B(m=M(x=99), z=3)
+
+    def test_pydantic_defaults(self) -> None:
+        """Pydantic exclude_defaults also excludes defaults that are needed."""
+
+        class A(BaseModel):
+            x: Literal[1] = 1
+
+        class B(BaseModel):
+            x: Literal[2] = 2
+
+        class M(BaseModel):
+            m: A | B = pydantic.Field(default_factory=A)
+
+        m = M(m=B())
+        m1 = model_replace(m, values={})
+        assert m1 == m
 
     def test_errors(self):
         class M(BaseModel):
