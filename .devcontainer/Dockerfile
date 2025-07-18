@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     build-essential
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.7 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /bin/uv
 ENV UV_LINK_MODE='copy'
 
 WORKDIR /workdir
