@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
 RUN mkdir /uv && chmod 777 /uv
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/
 ENV UV_PROJECT_ENVIRONMENT='/uv/venv' \
     UV_PYTHON_BIN_DIR="/uv/python" \
     VIRTUAL_ENV='/uv/venv' \
