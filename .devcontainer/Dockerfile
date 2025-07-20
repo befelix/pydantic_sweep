@@ -27,7 +27,7 @@ RUN mkdir /uv && chmod 777 /uv
 ENV UV_PROJECT_ENVIRONMENT='/uv/venv' \
     UV_PYTHON_BIN_DIR="/uv/python" \
     VIRTUAL_ENV='/uv/venv' \
-    PATH="/uv/venv/bin:${PATH}" \
+    PATH="/uv/venv/bin:${PATH}:/uv/python" \
     # For the devcontainer, the cache can live inside the devcontainer for convenience
     UV_CACHE_DIR="/uv/cache"
 
