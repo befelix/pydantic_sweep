@@ -5,12 +5,17 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     export DEBIAN_FRONTEND="noninteractive" \
     && apt update \
     && apt install -y \
-    # Basic utilities
-    vim \
-    git \
-    curl \
-    wget \
-    build-essential
+        # Basic utilities
+        vim \
+        git \
+        curl \
+        wget \
+        build-essential \
+        # locale support
+        locales \
+    # setup locales
+    && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+    && locale-gen
 
 RUN mkdir /uv && chmod 777 /uv
 

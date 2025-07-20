@@ -1,9 +1,9 @@
 [project]
 name = "pydantic-sweep"
+version = "0.3.6"
 description = "Programmatic parameter sweeps for pydantic."
 readme = "README.md"
 license = "MPL-2.0"
-dynamic = ["version"]
 authors = [
     { name = "Felix Berkenkamp" }
 ]
@@ -38,9 +38,6 @@ yaml = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.version]
-path = "src/pydantic_sweep/_version.py"
 
 [dependency-groups]
 dev = [
