@@ -1,7 +1,7 @@
 {
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".",
+    "context": "../",
     "options": [
       "--network=host",
     ],
@@ -13,7 +13,6 @@
   "workspaceFolder": "/workdir",
   "workspaceMount": "source=${localWorkspaceFolder},type=bind,target=/workdir",
   "mounts": [
-    "type=bind,source=${localEnv:HOME}/.cache,target=/home/ubuntu/.cache",
     "type=bind,source=${localEnv:HOME}/.ssh,target=/home/ubuntu/.ssh,readonly",
     "type=bind,source=${localEnv:HOME}/Downloads,target=/home/ubuntu/Downloads",
   ],
