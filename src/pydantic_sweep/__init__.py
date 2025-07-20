@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 from . import types
 from ._model import (
     BaseModel,
@@ -14,7 +16,9 @@ from ._model import (
     model_replace,
 )
 from ._utils import as_hashable, model_diff, random_seeds
-from ._version import __version__
+
+__version__ = version("pydantic-sweep")
+del version
 
 __all__ = [
     "BaseModel",

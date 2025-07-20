@@ -1154,6 +1154,7 @@ wheels = [
 
 [[package]]
 name = "pydantic-sweep"
+version = "0.3.6"
 source = { editable = "." }
 dependencies = [
     { name = "more-itertools" },

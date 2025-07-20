@@ -3,23 +3,19 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import importlib.util
-import sys
 from pathlib import Path
 
+import tomllib
+
 PROJECT_ROOT = Path(__file__).parents[1]
-MODULE_ROOT = PROJECT_ROOT.joinpath("src", "pydantic_sweep")
-
-sys.path.append(str(PROJECT_ROOT))
 
 
-def import_file(file: Path, /):
-    """Import a file directly."""
-    assert file.exists()
-    spec = importlib.util.spec_from_file_location(file.stem, file)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def get_version() -> str:
+    """Get the version from the pyproject.toml file."""
+    with open(PROJECT_ROOT / "pyproject.toml", "rb") as f:
+        pyproject = tomllib.load(f)
+
+    return pyproject["project"]["version"]
 
 
 # -- Project information -----------------------------------------------------
@@ -27,7 +23,7 @@ def import_file(file: Path, /):
 
 project = "pydantic_sweep"
 author = "Felix Berkenkamp"
-release = import_file(MODULE_ROOT / "_version.py").__version__
+release = get_version()
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
