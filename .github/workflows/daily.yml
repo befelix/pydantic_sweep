@@ -26,19 +26,18 @@ jobs:
     
     - name: Extract latest pydantic version
       run: |
-        PYDANTIC_VERSION=$(uv run --python ${{ matrix.python_version }} --with pydantic-sweep python -m pydantic_sweep._version)
-        echo "PYDANTIC_VERSION=$PYDANTIC_VERSION" >> "$GITHUB_ENV"
+        PYDANTIC_SWEEP_VERSION=$(uvx --python ${{ matrix.python_version }}  --with pydantic-sweep python -c 'from importlib.metadata import version; print(version("pydantic-sweep"))')
+        echo "PYDANTIC_SWEEP_VERSION=$PYDANTIC_SWEEP_VERSION" >> "$GITHUB_ENV"
 
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: "v${{ env.PYDANTIC_VERSION }}"
-        # Only checkout files relevant to tests
+        ref: "v${{ env.PYDANTIC_SWEEP_VERSION }}"
+        # Only checkout files relevant to tests, no lock files!
         sparse-checkout-cone-mode: false
         sparse-checkout: |
           tests
-          pyproject.toml
           example
 
     - name: Pytest
-      run: uvx --python ${{ matrix.python_version }} --with pydantic-sweep[yaml] pytest -m "not repo" tests
+      run: uvx --python ${{ matrix.python_version }} --with 'pydantic_sweep[yaml],pytest-cov,pytest-sugar' pytest -m "not repo" tests example
