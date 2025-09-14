@@ -198,7 +198,7 @@ class TestCheckModel:
             x: T
 
         # Unconstrained type variable
-        with pytest.warns(UserWarning, match="`x`"):
+        with pytest.warns(UserWarning, match=r"`x`"):
             check_model(A)
 
         T = TypeVar("T", bound=str)
@@ -220,7 +220,7 @@ class TestCheckModel:
         class A(BaseModel, Generic[T]):
             x: T
 
-        with pytest.warns(UserWarning, match="`x`"):
+        with pytest.warns(UserWarning, match=r"`x`"):
             check_model(A)
 
     def test_generic_union(self):
@@ -229,7 +229,7 @@ class TestCheckModel:
         class Model(BaseModel):
             x: T | int
 
-        with pytest.warns(UserWarning, match="`x`"):
+        with pytest.warns(UserWarning, match=r"`x`"):
             check_model(Model)
 
         T = TypeVar("T", str, float)
@@ -249,7 +249,7 @@ class TestCheckModel:
         class Model(BaseModel):
             x: tuple[Any, ...]
 
-        with pytest.warns(UserWarning, match="`x`"):
+        with pytest.warns(UserWarning, match=r"`x`"):
             check_model(Model)
 
     def test_non_hashable(self):
@@ -263,15 +263,15 @@ class TestCheckModel:
 
         check_model(A, unhashable="ignore")
         check_model(B, unhashable="ignore")
-        with pytest.warns(UserWarning, match="`a.x`"):
+        with pytest.warns(UserWarning, match=r"`a.x`"):
             check_model(B)
-        with pytest.raises(ValueError, match="`a.x`"):
+        with pytest.raises(ValueError, match=r"`a.x`"):
             check_model(B, unhashable="raise")
 
         class A(BaseModel):
             y: list
 
-        with pytest.warns(UserWarning, match="`y`"):
+        with pytest.warns(UserWarning, match=r"`y`"):
             check_model(A, unhashable="warn")
 
         class TD(typing_extensions.TypedDict):
@@ -280,26 +280,26 @@ class TestCheckModel:
         class A(BaseModel):
             t: TD
 
-        with pytest.warns(UserWarning, match="`t`"):
+        with pytest.warns(UserWarning, match=r"`t`"):
             check_model(A, unhashable="warn")
 
         class A(BaseModel):
             x: int | Annotated[set, "set"]
 
-        with pytest.warns(UserWarning, match="`x`"):
+        with pytest.warns(UserWarning, match=r"`x`"):
             check_model(A)
 
     def test_non_hashable_nested(self):
         class A(BaseModel):
             x: tuple[tuple[list]]
 
-        with pytest.warns(UserWarning, match="`x`"):
+        with pytest.warns(UserWarning, match=r"`x`"):
             check_model(A)
 
         class A(BaseModel):
             x: tuple[list[int]]
 
-        with pytest.warns(UserWarning, match="`x`"):
+        with pytest.warns(UserWarning, match=r"`x`"):
             check_model(A)
 
 
