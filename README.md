@@ -13,6 +13,7 @@ complex parameter sweeps over `pydantic` models in Python.
 - Flexibility: specify complex parameter combinations by chaining simple functional operations
 - Safety checks for parameter combinations (get meaningful errors early)
 - `pydantic` field validation
+- Conversion between json/yaml/python code representation of models
 
 For example, the following code will instantiate models with `(x=5, sub=Sub1(s=1)` and 
 `(x=6, sub=Sub1(s=2)` and try each of those with seed values of `seed=43` and 
