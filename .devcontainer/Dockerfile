@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     && locale-gen
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /uvx /bin/
 
 FROM base as devcontainer
 

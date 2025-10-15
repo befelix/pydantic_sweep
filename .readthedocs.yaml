@@ -7,5 +7,5 @@ build:
   tools:
     python: "3.13"
   commands:
-    - python -m pip install 'uv~=0.8.0'
+    - python -m pip install 'uv~=0.9.2'
     - uv run --frozen --group doc -m sphinx --jobs 2 --fail-on-warning -b html docs $READTHEDOCS_OUTPUT/html
