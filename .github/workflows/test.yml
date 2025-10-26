@@ -3,6 +3,9 @@ on: [push]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+env:
+  UV_FROZEN: "1"
+  UV_LINK_MODE: "symlink"
 
 jobs:
   linux-low:
@@ -19,7 +22,7 @@ jobs:
         version: "~=0.9.2"
 
     - name: Pytest
-      run: uv run --group dev --python 3.10 --resolution "lowest-direct" pytest
+      run: uv run --python 3.10 --resolution "lowest-direct" pytest
 
   linux-high:
     name: "linux-high"
@@ -36,24 +39,19 @@ jobs:
 
       - name: Ruff
         run: |
-          uv run --frozen ruff format --check
-          uv run --frozen ruff check
+          uv run ruff format --check
+          uv run ruff check
 
       - name: Mypy
-        run: |
-          uv run --frozen --group dev mypy
-          uv run --frozen --group dev mypy docs/notebooks/combinations.pctpy
-          uv run --frozen --group dev mypy docs/notebooks/example.pctpy
-          uv run --frozen --group dev mypy docs/notebooks/intro.pctpy
-          uv run --frozen --group dev mypy docs/notebooks/models.pctpy
-          uv run --frozen --group dev mypy docs/notebooks/nested.pctpy
+        run: uv run mypy
+
 
       - name: Pytest
-        run: uv run --frozen --group dev pytest
+        run: uv run pytest
 
       - name: Documentation
         run: |
-          uv run --frozen --group doc -m sphinx \
+          uv run --group doc -m sphinx \
               --jobs 2 \
               --fail-on-warning \
               -b html \
@@ -80,4 +78,4 @@ jobs:
           version: "~=0.9.2"
 
       - name: Pytest
-        run: uv run  --frozen --group dev pytest
+        run: uv run pytest

@@ -99,6 +99,12 @@ def nested_dict_get(d: Config, /, path: Path, *, leaf: Literal[True]) -> FieldVa
 def nested_dict_get(d: Config, /, path: Path, *, leaf: Literal[False]) -> Config: ...
 
 
+@overload
+def nested_dict_get(
+    d: Config, /, path: Path, *, leaf: None = None
+) -> Config | FieldValue: ...
+
+
 def nested_dict_get(
     d: Config, /, path: Path, *, leaf: bool | None = None
 ) -> Config | FieldValue:
@@ -433,10 +439,10 @@ def iter_subtypes(t: type, /) -> Iterator[type]:
                 if arg is not Ellipsis:
                     yield from iter_subtypes(arg)
         case (_, typing.TypeVar()):
-            if t.__bound__ is not None:
-                yield from iter_subtypes(t.__bound__)
-            elif t.__constraints__:
-                for constraint in t.__constraints__:
+            if t.__bound__ is not None:  # type: ignore[unresolved-attribute]
+                yield from iter_subtypes(t.__bound__)  # type: ignore[unresolved-attribute]
+            elif t.__constraints__:  # type: ignore[unresolved-attribute]
+                for constraint in t.__constraints__:  # type: ignore[unresolved-attribute]
                     yield from iter_subtypes(constraint)
             else:
                 # Unconstrained typevar can take any value.

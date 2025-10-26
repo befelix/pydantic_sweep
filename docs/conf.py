@@ -9,7 +9,7 @@ from pathlib import Path
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib
+    import tomli as tomllib  # type: ignore[unresolved-import]
 
 
 PROJECT_ROOT = Path(__file__).parents[1]
@@ -97,13 +97,13 @@ source_suffix = {
 }
 # Note: Multi-suffixes like .pct.py will be supported in myst-nb>1.1.2
 nb_custom_formats = {
-    ".pctpy": ["jupytext.reads", {"fmt": "py:percent"}],
+    ".pct.py": ["jupytext.reads", {"fmt": "py:percent"}],
 }
 nb_execution_in_temp = True
 nb_execution_allow_errors = False
 
 
-def linkcode_resolve(domain, info):
+def linkcode_resolve(domain: str, info: dict) -> str | None:
     """Link to code on Github."""
     # https://www.sphinx-doc.org/en/master/usage/extensions/linkcode.html#module-sphinx.ext.linkcode
     if domain != "py":

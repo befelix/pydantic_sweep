@@ -60,6 +60,7 @@ class Model2(pydantic.BaseModel):
     sub: Sub1 | Sub2
 
 
+# Ambiguous definition matches both Sub1 and Sub2
 pprint.pp(Model2(sub=dict(x=1)))
 
 # %% [markdown]
