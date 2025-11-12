@@ -687,3 +687,178 @@ class TestModelReplace:
         assert b1 == B()
         b1 = model_replace(b, values={"a": DefaultValue, "a.x": DefaultValue})
         assert b1 == B()
+
+
+class TestConfigCombineIndexingAndLength:
+    """Test indexing and length functionality of ConfigCombine."""
+
+    def test_len_config_product(self):
+        """Test __len__ method for config_product."""
+        res = config_product(field("a", [1, 2]), field("b", [3, 4]))
+        assert len(res) == 4  # 2 * 2 = 4 combinations
+
+        # Single field
+        res = config_product(field("a", [1, 2, 3]))
+        assert len(res) == 3
+
+        # Empty configs
+        res = config_product(field("a", []))
+        assert len(res) == 0
+
+        # Three fields
+        res = config_product(
+            field("a", [1, 2]), field("b", [3, 4]), field("c", [5, 6, 7])
+        )
+        assert len(res) == 12  # 2 * 2 * 3 = 12 combinations
+
+    def test_len_config_zip(self):
+        """Test __len__ method for config_zip."""
+        res = config_zip(field("a", [1, 2]), field("b", [3, 4]))
+        assert len(res) == 2  # zip of equal length iterables
+
+        # Single element
+        res = config_zip(field("a", [1]), field("b", [3]))
+        assert len(res) == 1
+
+        # Empty configs
+        res = config_zip(field("a", []), field("b", []))
+        assert len(res) == 0
+
+    def test_len_config_chain(self):
+        """Test __len__ method for config_chain."""
+        res = config_chain(field("a", [1, 2]), field("b", [3, 4]))
+        assert len(res) == 4  # 2 + 2 = 4 chained items
+
+        # Single field
+        res = config_chain(field("a", [1, 2, 3]))
+        assert len(res) == 3
+
+        # Different lengths
+        res = config_chain(field("a", [1]), field("b", [3, 4, 5]))
+        assert len(res) == 4  # 1 + 3 = 4 chained items
+
+    def test_len_config_roundrobin(self):
+        """Test __len__ method for config_roundrobin."""
+        res = config_roundrobin(field("a", [1, 2]), field("b", [3, 4]))
+        assert len(res) == 4  # 2 + 2 = 4 round-robin items
+
+        # Different lengths
+        res = config_roundrobin(field("a", [1]), field("b", [3, 4, 5]))
+        assert len(res) == 4  # 1 + 3 = 4 round-robin items
+
+    def test_getitem_config_product(self):
+        """Test __getitem__ method for config_product."""
+        res = config_product(field("a", [1, 2]), field("b", [3, 4]))
+        expected = [
+            {"a": 1, "b": 3},
+            {"a": 1, "b": 4},
+            {"a": 2, "b": 3},
+            {"a": 2, "b": 4},
+        ]
+
+        # Test positive indexing
+        assert res[0] == expected[0]
+        assert res[1] == expected[1]
+        assert res[2] == expected[2]
+        assert res[3] == expected[3]
+
+        # Test negative indexing
+        assert res[-1] == expected[-1]
+        assert res[-2] == expected[-2]
+        assert res[-3] == expected[-3]
+        assert res[-4] == expected[-4]
+
+        # Test out of bounds
+        with pytest.raises(IndexError, match="Index 4 out of range"):
+            res[4]
+        with pytest.raises(IndexError, match="Index -5 out of range"):
+            res[-5]
+
+    def test_getitem_config_zip(self):
+        """Test __getitem__ method for config_zip."""
+        res = config_zip(field("a", [1, 2]), field("b", [3, 4]))
+        expected = [{"a": 1, "b": 3}, {"a": 2, "b": 4}]
+
+        # Test positive indexing
+        assert res[0] == expected[0]
+        assert res[1] == expected[1]
+
+        # Test negative indexing
+        assert res[-1] == expected[-1]
+        assert res[-2] == expected[-2]
+
+        # Test out of bounds
+        with pytest.raises(IndexError, match="Index 2 out of range"):
+            res[2]
+        with pytest.raises(IndexError, match="Index -3 out of range"):
+            res[-3]
+
+    def test_getitem_config_chain(self):
+        """Test __getitem__ method for config_chain."""
+        res = config_chain(field("a", [1, 2]), field("b", [3, 4]))
+        expected = [{"a": 1}, {"a": 2}, {"b": 3}, {"b": 4}]
+
+        # Test positive indexing
+        assert res[0] == expected[0]
+        assert res[1] == expected[1]
+        assert res[2] == expected[2]
+        assert res[3] == expected[3]
+
+        # Test negative indexing
+        assert res[-1] == expected[-1]
+        assert res[-2] == expected[-2]
+
+        # Test out of bounds
+        with pytest.raises(IndexError, match="Index 4 out of range"):
+            res[4]
+        with pytest.raises(IndexError, match="Index -5 out of range"):
+            res[-5]
+
+    def test_getitem_config_roundrobin(self):
+        """Test __getitem__ method for config_roundrobin."""
+        res = config_roundrobin(field("a", [1, 2]), field("b", [3, 4]))
+        expected = [{"a": 1}, {"b": 3}, {"a": 2}, {"b": 4}]
+
+        # Test positive indexing
+        assert res[0] == expected[0]
+        assert res[1] == expected[1]
+        assert res[2] == expected[2]
+        assert res[3] == expected[3]
+
+        # Test negative indexing
+        assert res[-1] == expected[-1]
+        assert res[-2] == expected[-2]
+
+    def test_getitem_empty_config(self):
+        """Test __getitem__ method with empty configs."""
+        res = config_product(field("a", []))
+
+        # Empty config should raise IndexError for any index
+        with pytest.raises(IndexError, match="Index 0 out of range"):
+            res[0]
+        with pytest.raises(IndexError, match="Index -1 out of range"):
+            res[-1]
+
+    def test_len_and_getitem_consistency(self):
+        """Test that len() and __getitem__ are consistent."""
+        test_cases = [
+            config_product(field("a", [1, 2]), field("b", [3, 4])),
+            config_zip(field("a", [1, 2]), field("b", [3, 4])),
+            config_chain(field("a", [1, 2]), field("b", [3, 4])),
+            config_roundrobin(field("a", [1, 2]), field("b", [3, 4])),
+        ]
+
+        for res in test_cases:
+            length = len(res)
+            list_res = list(res)
+
+            # Check that length matches list length
+            assert length == len(list_res)
+
+            # Check that all valid indices work
+            for i in range(length):
+                assert res[i] == list_res[i]
+
+            # Check that negative indexing works
+            for i in range(1, length + 1):
+                assert res[-i] == list_res[-i]

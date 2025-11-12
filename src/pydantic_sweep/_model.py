@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import functools
 import itertools
 import types
 import typing
-from collections.abc import Hashable, Iterable
-from typing import Any, Literal, TypeVar, cast, overload
+from collections.abc import Hashable, Iterable, Iterator, Sequence
+from typing import Any, Literal, Self, TypeVar, cast, overload
 
 import more_itertools
 import pydantic
@@ -52,6 +53,102 @@ __all__ = [
 ]
 
 T = TypeVar("T")
+
+
+def chainer_as_combiner(chainer: Chainer[T]) -> Combiner[T]:
+    """Convert a chainer into a combiner that yields single-item tuples."""
+
+    @functools.wraps(chainer)
+    def _combiner(*configs: Iterable[T]) -> Iterable[tuple[T, ...]]:
+        for item in chainer(*configs):
+            yield (item,)
+
+    return _combiner
+
+
+class ConfigCombination:
+    """Iterator for custom combination of configuration iterators.
+
+    Supports both iteration and indexed access for configuration generation.
+    This allows for memory-efficient parameter sweeps while maintaining compatibility
+    with existing code that expects sequence-like behavior.
+    """
+
+    def __init__(
+        self,
+        *config_sequences: Sequence[Config | ConfigCombination],
+        combiner: Combiner,
+    ):
+        """Initialize custom combine configuration iterator."""
+        self._combiner = combiner
+        self._config_sequences = config_sequences
+        self._length = more_itertools.ilen(self._index_iter())
+
+        # Simple compatibility check - but not exhaustive
+        try:
+            next(iter(self))
+        except StopIteration:
+            pass
+
+    @classmethod
+    def from_chainer(
+        cls, *config_iterators: Sequence[Config | ConfigCombination], chainer: Chainer
+    ) -> Self:
+        """Create a ConfigCombine using a chainer function."""
+        combiner = chainer_as_combiner(chainer)
+        return cls(*config_iterators, combiner=combiner)
+
+    def __len__(self) -> int:
+        """Return the number of configurations."""
+        return self._length
+
+    def __iter__(self) -> Iterator[Config]:
+        """Iterate over all custom combination configurations."""
+        for combo in self._combiner(*self._config_sequences):
+            yield merge_nested_dicts(*combo)
+
+    def _index_iter(self) -> Iterator[tuple[int]]:
+        """Iterate over indices for all custom combination configurations."""
+        config_iterators = [
+            [(config_idx, item_idx) for item_idx in range(len(configs))]
+            for config_idx, configs in enumerate(self._config_sequences)
+        ]
+        yield from self._combiner(*config_iterators)
+
+    def __getitem__(self, index: int) -> Config:
+        """Get configuration at a specific index."""
+        original_index = index
+        length = len(self)
+
+        # Handle negative indexing
+        if index < 0:
+            index = length + index
+
+        # Check bounds
+        if index < 0 or index >= length:
+            raise IndexError(f"Index {original_index} out of range")
+
+        # Use range iterators to efficiently find the specific combination at index
+        for current_index, combo_idx in enumerate(self._index_iter()):
+            if current_index == index:
+                combo = [
+                    self._config_sequences[config_idx][item_idx]
+                    for config_idx, item_idx in combo_idx
+                ]
+                return merge_nested_dicts(*combo)
+
+        # This should never happen if __len__ and __iter__ are consistent
+        raise IndexError(f"Index {original_index} not found")
+
+    def __str__(self) -> str:
+        """String representation of the ConfigCombine object."""
+        return f"ConfigCombine({self._length} configurations)"
+
+    def __eq__(self, other) -> bool:
+        """Support equality comparison with lists and other iterators."""
+        if isinstance(other, ConfigCombination):
+            other = list(other)
+        return list(self) == other
 
 
 class BaseModel(
@@ -506,10 +603,10 @@ def field(
 
 
 def config_combine(
-    *configs: Iterable[Config],
+    *configs: Sequence[Config | ConfigCombination],
     combiner: Combiner | None = None,
     chainer: Chainer | None = None,
-) -> list[Config]:
+) -> ConfigCombination:
     """Flexible combination of configuration dictionaries.
 
     In contrast to the more specific functions below, this allows you to flexibly use
@@ -518,6 +615,18 @@ def config_combine(
 
     The output of this function is a valid input to both itself and other combiner
     functions.
+
+    >>> configs = config_combine(
+    ...     field("a", [1, 2]), field("b", [3, 4]), chainer=itertools.chain
+    ... )
+    >>> list(configs)
+    [{'a': 1}, {'a': 2}, {'b': 3}, {'b': 4}]
+
+    >>> configs = config_combine(
+    ...     field("a", [1, 2]), field("b", [3, 4]), combiner=itertools.product
+    ... )
+    >>> list(configs)
+    [{'a': 1, 'b': 3}, {'a': 1, 'b': 4}, {'a': 2, 'b': 3}, {'a': 2, 'b': 4}]
 
     Parameters
     ----------
@@ -532,32 +641,27 @@ def config_combine(
 
     Returns
     -------
-    list[Config]:
-        A list of new configuration objects after combining or chaining.
+    ConfigCombine:
+        A lazy iterator over new configuration objects after combining or chaining.
     """
+    if combiner is not None and chainer is not None:
+        raise ValueError("Only one of `combiner` and `chainer` can be provided.")
+
     if combiner is not None:
-        if chainer is not None:
-            raise ValueError("Can only provide `combiner` or `chainer`, not both")
-        return [merge_nested_dicts(*combo) for combo in combiner(*configs)]
+        return ConfigCombination(*configs, combiner=combiner)
     elif chainer is not None:
-        res = list(chainer(*configs))
-        if not isinstance(res[0], dict):
-            raise ValueError(
-                f"Chained items are not dictionaries, but {type(res[0])}. Are you sure "
-                f"that you passed a valid chainer function? "
-            )
-        return res
+        return ConfigCombination.from_chainer(*configs, chainer=chainer)
     else:
-        raise ValueError("Must provide one of `single_out` or `multi_out`")
+        raise ValueError("One of `combiner` or `chainer` must be provided.")
 
 
-def config_product(*configs: Iterable[Config]) -> list[Config]:
+def config_product(*configs: Sequence[Config | ConfigCombination]) -> ConfigCombination:
     """A product of existing configuration dictionaries.
 
     This is the most common way of constructing searches. It constructs the product
     of the inputs.
 
-    >>> config_product(field("a", [1, 2]), field("b", [3, 4]))
+    >>> list(config_product(field("a", [1, 2]), field("b", [3, 4])))
     [{'a': 1, 'b': 3}, {'a': 1, 'b': 4}, {'a': 2, 'b': 3}, {'a': 2, 'b': 4}]
 
     The output of this function is a valid input to both itself and other combiner
@@ -566,35 +670,39 @@ def config_product(*configs: Iterable[Config]) -> list[Config]:
     return config_combine(*configs, combiner=itertools.product)
 
 
-def _safe_zip(*configs: Iterable[Config]) -> Iterable[tuple[Config, ...]]:
+def _safe_zip(*configs: Iterable[T]) -> Iterable[tuple[T, ...]]:
     return zip(*configs, strict=True)
 
 
-def config_zip(*configs: Iterable[Config]) -> list[Config]:
+def config_zip(*configs: Sequence[Config | ConfigCombination]) -> ConfigCombination:
     """Return the zip-combination of configuration dictionaries.
 
-    >>> config_zip(field("a", [1, 2]), field("b", [3, 4]))
+    >>> list(config_zip(field("a", [1, 2]), field("b", [3, 4])))
     [{'a': 1, 'b': 3}, {'a': 2, 'b': 4}]
     """
     return config_combine(*configs, combiner=_safe_zip)
 
 
-def config_chain(*configs: Iterable[Config]) -> list[Config]:
+def config_chain(*configs: Sequence[Config | ConfigCombination]) -> ConfigCombination:
     """Chain configuration dictionaries behind each other.
 
-    >>> config_chain(field("a", [1, 2]), field("b", [3, 4]))
+    >>> list(config_chain(field("a", [1, 2]), field("b", [3, 4])))
     [{'a': 1}, {'a': 2}, {'b': 3}, {'b': 4}]
     """
     return config_combine(*configs, chainer=itertools.chain)
 
 
-def config_roundrobin(*configs: Iterable[Config]) -> list[Config]:
+def config_roundrobin(
+    *configs: Sequence[Config | ConfigCombination],
+) -> ConfigCombination:
     """Interleave the configuration dictionaries.
 
     This is the same behavior as `config_chain`, but instead of chaining them behind
     each other, takes from the different iterables in turn.
 
     >>> config_roundrobin(field("a", [1, 2, 3]), field("b", [3, 4]))
+    <pydantic_sweep._model.ConfigCombination object at ...>
+    >>> list(config_roundrobin(field("a", [1, 2, 3]), field("b", [3, 4])))
     [{'a': 1}, {'b': 3}, {'a': 2}, {'b': 4}, {'a': 3}]
     """
     return config_combine(*configs, chainer=more_itertools.roundrobin)
