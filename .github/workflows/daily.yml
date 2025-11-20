@@ -30,7 +30,7 @@ jobs:
         echo "PYDANTIC_SWEEP_VERSION=$PYDANTIC_SWEEP_VERSION" >> "$GITHUB_ENV"
 
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         ref: "v${{ env.PYDANTIC_SWEEP_VERSION }}"
         # Only checkout files relevant to tests, no lock files!
