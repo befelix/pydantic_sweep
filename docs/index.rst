@@ -20,6 +20,7 @@ To get to know the library, please proceed to the :doc:`notebooks/intro` tutoria
    notebooks/nested
    notebooks/models
    notebooks/example
+   notebooks/conversion
 
 .. toctree::
    :maxdepth: 1
