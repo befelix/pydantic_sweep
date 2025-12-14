@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-sweep"
-version = "0.3.6"
+version = "0.3.7"
 description = "Programmatic parameter sweeps for pydantic."
 readme = "README.md"
 license = "MPL-2.0"

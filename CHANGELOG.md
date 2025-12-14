@@ -5,6 +5,13 @@ This page summarizes historic changes in the library. Please also see the
 
 ## 0.3
 
+### 0.3.7
+
+- Support Python 3.14
+- Minor typing improvements
+- Added support for `toml` in conversion
+- Documentation for `pydantic_sweep.convert`
+
 ### 0.3.6
 
 - Fix `model_replace` for Union types
