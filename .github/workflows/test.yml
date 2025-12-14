@@ -47,7 +47,7 @@ jobs:
 
 
       - name: Pytest
-        run: uv run pytest
+        run: uv run pytest --cov-fail-under=90
 
       - name: Documentation
         run: |

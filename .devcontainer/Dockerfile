@@ -35,7 +35,7 @@ USER ubuntu
 WORKDIR /workdir
 
 # Install a bunch of Python versions for convenience
-RUN uv python install 3.10 3.11 3.12 3.13
+RUN uv python install 3.10 3.11 3.12 3.13 3.14
 
 # Install current project dependencies
 RUN --mount=type=bind,source=uv.lock,target=uv.lock \
