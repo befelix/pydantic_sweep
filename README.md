@@ -4,7 +4,7 @@
 complex parameter sweeps over `pydantic` models in Python. 
 
 ![PyPI - Version](https://img.shields.io/pypi/v/pydantic-sweep)
-![Static Badge](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pydantic_sweep)
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/befelix/pydantic_sweep/main)
 ![GitHub License](https://img.shields.io/github/license/befelix/pydantic_sweep)
 
