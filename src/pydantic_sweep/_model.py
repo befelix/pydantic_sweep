@@ -274,8 +274,7 @@ def initialize(
     to: Path,
     at: Path | None = None,
     check: bool = True,
-) -> list[Config]:
-    pass
+) -> list[Config]: ...
 
 
 @overload
@@ -288,8 +287,7 @@ def initialize(
     to: Path | None = None,
     at: Path,
     check: bool = True,
-) -> list[Config]:
-    pass
+) -> list[Config]: ...
 
 
 @overload
@@ -302,8 +300,7 @@ def initialize(
     to: None = None,
     at: None = None,
     check: bool = True,
-) -> list[BaseModelT]:
-    pass
+) -> list[BaseModelT]: ...
 
 
 def initialize(
