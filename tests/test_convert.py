@@ -85,7 +85,7 @@ class TestModelToPython:
         )
 
 
-@pytest.mark.parametrize("ext", ["json", "yaml", "py"])
+@pytest.mark.parametrize("ext", ["json", "yaml", "yml", "py", "toml"])
 def test_conversion(tmp_path, ext):
     submodel = Model(
         x=1,
@@ -125,6 +125,7 @@ def test_conversion_entrypoint(tmp_path, monkeypatch):
     model_str = f"{Model.__module__}.{Model.__name__}"
     json_file = tmp_path / "model.json"
     yaml_file = tmp_path / "model.yaml"
+    toml_file = tmp_path / "model.toml"
     py_file = tmp_path / "model.py"
 
     convert.write(tmp_path / json_file, model=model)
@@ -136,27 +137,23 @@ def test_conversion_entrypoint(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "sys.argv", ["", str(json_file), str(yaml_file), "--model", model_str]
     )
-    runpy.run_module(
-        "pydantic_sweep.convert",
-        run_name="__main__",
-    )
+    runpy.run_module("pydantic_sweep.convert", run_name="__main__")
 
     monkeypatch.setattr(
-        "sys.argv", ["", str(yaml_file), str(py_file), "--model", model_str]
+        "sys.argv", ["", str(yaml_file), str(toml_file), "--model", model_str]
     )
-    runpy.run_module(
-        "pydantic_sweep.convert",
-        run_name="__main__",
+    runpy.run_module("pydantic_sweep.convert", run_name="__main__")
+
+    monkeypatch.setattr(
+        "sys.argv", ["", str(toml_file), str(py_file), "--model", model_str]
     )
+    runpy.run_module("pydantic_sweep.convert", run_name="__main__")
 
     json_file.unlink()
     monkeypatch.setattr(
         "sys.argv", ["", str(py_file), str(json_file), "--model", "model"]
     )
-    runpy.run_module(
-        "pydantic_sweep.convert",
-        run_name="__main__",
-    )
+    runpy.run_module("pydantic_sweep.convert", run_name="__main__")
 
     reconstructed_model = convert.load(json_file, model=model_str)
     assert reconstructed_model == model
