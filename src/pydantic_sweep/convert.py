@@ -28,7 +28,7 @@ def load(source: os.PathLike | str, /, *, model: str) -> pydantic.BaseModel:
     ----------
     source :
         The file that we want to read the model from. Supported extensions are
-        ``.json``, ``.yaml`` and ``.py``.
+        ``.json``, ``.yaml``, ``.yml``, ``.toml``, and ``.py``.
     model :
         The model that we want to load. This is either a path to a module with
         dot-notation (e.g., ``my_module.MyModel``) or, for python files, the
@@ -84,8 +84,8 @@ def write(
     Parameters
     ----------
     target :
-        The file to write to. Supported extensions are ``.json``, ``.yaml`` and
-        ``.py``.
+        The file to write to. Supported extensions are ``.json``, ``.yaml``,
+        ``.yml``, ``.toml`` and ``.py``.
     model :
         The pydantic model that we want to write to the file.
     yaml_options :
