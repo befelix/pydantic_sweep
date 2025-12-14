@@ -2,6 +2,7 @@ import argparse
 import importlib
 import os
 import runpy
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -44,11 +45,22 @@ def load(source: os.PathLike | str, /, *, model: str) -> pydantic.BaseModel:
             json_str = file.read()
         cls = _import_module(model)
         return cls.model_validate_json(json_str)
-    elif source.suffix == ".yaml":
+    elif source.suffix in {".yaml", ".yml"}:
         import yaml  # type: ignore[import-untyped]
 
         with source.open("r") as file:
             content = yaml.safe_load(file)
+
+        cls = _import_module(model)
+        return cls(**content)
+    elif source.suffix == ".toml":
+        if sys.version_info < (3, 11):
+            import tomli
+        else:
+            import tomllib as tomli
+
+        with source.open("rb") as file:
+            content = tomli.load(file)
 
         cls = _import_module(model)
         return cls(**content)
@@ -87,26 +99,31 @@ def write(
     if target.exists():
         raise FileExistsError(f"File already exists: {target}")
     if target.suffix == ".json":
-        dump = model.model_dump_json(
+        str_dump = model.model_dump_json(
             exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
         )
         with target.open("w") as f:
-            f.write(dump)
-    elif target.suffix == ".yaml":
-        import json
-
+            f.write(str_dump)
+    elif target.suffix in {".yaml", ".yml"}:
         import yaml
 
         if yaml_options is None:
             yaml_options = dict()
         # This runs serializers properly (e.g., for Path / Enum objects)
-        dump = json.loads(
-            model.model_dump_json(
-                exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
-            )
+        dump = model.model_dump(
+            mode="json", exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
         )
+
         with target.open("w") as f:
             yaml.dump(dump, f, **yaml_options)
+    elif target.suffix == ".toml":
+        import tomli_w
+
+        dump = model.model_dump(
+            mode="json", exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
+        )
+        with target.open("wb") as f:
+            tomli_w.dump(dump, f)
     elif target.suffix == ".py":
         code = model_to_python(
             model, exclude_unset=exclude_unset, exclude_defaults=exclude_defaults
