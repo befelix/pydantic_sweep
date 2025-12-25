@@ -122,28 +122,44 @@ def nested_dict_get(
 
     Raises
     ------
-    AttributeError
+    KeyError
         If the path does not exist.
     ValueError
         If the result does not match what we specified in ``leaf``.
     """
     path = normalize_path(path)
-    for p in path:
-        d = d[p]  # type: ignore[assignment]
-    if leaf is not None:
-        if leaf:
-            if isinstance(d, dict):
-                raise ValueError(
-                    f"Expected a leaf at path {path_to_str(path)}, but got a "
-                    f"dictionary."
-                )
-        else:
-            if not isinstance(d, dict):
-                raise ValueError(
-                    f"Expected a non-leaf node at path {path_to_str(path)}, but got "
-                    f"{type(d)}."
-                )
-    return d
+    node = d
+
+    # Navigate to the sub-path in the nested dictionary
+    if path:
+        try:
+            for i, key in enumerate(path):
+                node = node[key]  # type: ignore[assignment]
+        except TypeError as e:
+            raise KeyError(
+                f"Expected a dictionary at {path_to_str(path[:i])}, got {type(node)}."
+            ) from e
+        except KeyError as e:
+            raise KeyError(
+                f"The path '{path_to_str(path)}' is not part of the dictionary."
+            ) from e
+
+    # No special checks needed
+    if leaf is None:
+        return node
+
+    if leaf:
+        if isinstance(node, dict):
+            raise ValueError(
+                f"Expected a leaf at path {path_to_str(path)}, but got a dictionary."
+            )
+    else:
+        if not isinstance(node, dict):
+            raise ValueError(
+                f"Expected a non-leaf node at path {path_to_str(path)}, but got "
+                f"{type(node)}."
+            )
+    return node
 
 
 def nested_dict_replace(
@@ -153,21 +169,14 @@ def nested_dict_replace(
     if not inplace:
         d = copy.deepcopy(d)
 
-    *subpath, final = normalize_path(path)
+    *subpath, key = normalize_path(path)
 
-    node = d
-    for i, key in enumerate(subpath):
-        sub = node[key]
-        if not isinstance(sub, dict):
-            raise ValueError(
-                f"Expected a dictionary at {path_to_str(subpath[: i + 1])}, got {sub}."
-            )
-        node = sub
+    sub = nested_dict_get(d, path=subpath, leaf=False)
 
-    if final not in node:
+    if key not in sub:
         raise KeyError(f"The path '{path_to_str(path)}' is not part of the dictionary.")
     else:
-        node[final] = value
+        sub[key] = value
 
     return d
 
@@ -262,7 +271,7 @@ def merge_nested_dicts(*dicts: FlexibleConfig, overwrite: bool = False) -> Confi
     """
     if not overwrite:
         return nested_dict_from_items(
-            itertools.chain(*(nested_dict_items(d) for d in dicts))
+            itertools.chain.from_iterable(nested_dict_items(d) for d in dicts)
         )
 
     res: Config = dict()

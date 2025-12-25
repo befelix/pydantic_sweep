@@ -135,6 +135,15 @@ class TestNestedDictGet:
         with pytest.raises(KeyError):
             nested_dict_get(d, "c")
 
+    def test_empty_path(self):
+        d = dict(a=1)
+        assert nested_dict_get(d, ()) is d
+
+    def test_non_dict(self):
+        d = dict(a=5)
+        with pytest.raises(KeyError):
+            nested_dict_get(d, "a.b")
+
     def test_leaf(self):
         d = dict(a=dict(b=2))
         nested_dict_get(d, "a", leaf=False)
