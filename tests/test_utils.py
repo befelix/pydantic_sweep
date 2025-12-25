@@ -16,6 +16,7 @@ from pydantic_sweep._utils import (
     merge_nested_dicts,
     model_diff,
     nested_dict_at,
+    nested_dict_drop,
     nested_dict_from_items,
     nested_dict_get,
     nested_dict_replace,
@@ -114,14 +115,66 @@ def test_nested_dict_at():
     assert res == dict(a=dict(b=dict(c=5)))
 
 
-def test_nested_dict_replace():
-    d = dict(a=5, b=dict(c=6, d=7))
-    d_orig = copy.deepcopy(d)
-    expected = dict(a=5, b=dict(c=0, d=7))
+class TestNestedDictReplace:
+    def test_inplace(self):
+        d = dict(a=5, b=dict(c=6, d=7))
+        d_orig = copy.deepcopy(d)
+        expected = dict(a=5, b=dict(c=0, d=7))
 
-    res = nested_dict_replace(d, "b.c", value=0)
-    assert res == expected
-    assert d == d_orig, "In-place modification"
+        nested_dict_replace(d, "b.c", value=0, inplace=True)
+        assert d == expected
+        assert d_orig != d
+
+    def test_out_of_place(self):
+        d = dict(a=5, b=dict(c=6, d=7))
+        d_orig = copy.deepcopy(d)
+        expected = dict(a=5, b=dict(c=0, d=7))
+
+        res = nested_dict_replace(d, "b.c", value=0)
+        assert res == expected
+        assert d == d_orig, "In-place modification"
+
+    def test_empty_path(self):
+        d = dict(a=5, b=dict(c=6, d=7))
+        with pytest.raises(ValueError):
+            nested_dict_replace(d, (), value=0)
+
+    def test_missing(self):
+        # Replacing non-existing key
+        d = dict(a=5, b=dict(a=5))
+        with pytest.raises(KeyError):
+            nested_dict_replace(d, "b.c", value=0)
+
+
+class TestNestedDictDrop:
+    def test_inplace(self):
+        d = dict(a=5, b=dict(c=6, d=7))
+        d_orig = copy.deepcopy(d)
+
+        nested_dict_drop(d, "b.c", inplace=True)
+        expected = dict(a=5, b=dict(d=7))
+        assert d == expected
+        assert d_orig != d
+
+    def test_out_of_place(self):
+        d = dict(a=5, b=dict(c=6, d=7))
+        d_orig = copy.deepcopy(d)
+
+        res = nested_dict_drop(d, "b.c", inplace=False)
+        expected = dict(a=5, b=dict(d=7))
+        assert res == expected
+        assert d == d_orig, "In-place modification"
+
+    def test_empty_path(self):
+        d = dict(a=5, b=dict(c=6, d=7))
+        with pytest.raises(ValueError):
+            nested_dict_drop(d, (), inplace=True)
+
+    def test_missing(self):
+        # Dropping non-existing key
+        d = dict(a=5, b=dict(a=5))
+        with pytest.raises(KeyError):
+            nested_dict_drop(d, "b.c", inplace=True)
 
 
 class TestNestedDictGet:

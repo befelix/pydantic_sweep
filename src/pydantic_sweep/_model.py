@@ -16,6 +16,7 @@ from pydantic_sweep._utils import (
     iter_subtypes,
     merge_nested_dicts,
     nested_dict_at,
+    nested_dict_drop,
     nested_dict_from_items,
     nested_dict_get,
     nested_dict_items,
@@ -414,28 +415,22 @@ def model_replace(model: BaseModelT, *, values: FlexibleConfig) -> BaseModelT:
             f"Expected dictionary for input 'values', got '{type(values)}'."
         )
 
+    # Check for conflicts
+    value_dump = _flexible_config_to_nested(values)
     model_dump = model.model_dump()
 
     # We remove any paths with DefaultValue both from the model dump and values,
     # so that pydantic uses whatever was the default.
-    config_items = []
-    for key, value in nested_dict_items(values):
-        if value is DefaultValue:
-            d = model_dump
-            *path, final = key
-            for subkey in path:
-                if subkey not in d:
-                    break
-                d = d[subkey]
-            if final in d:
-                del d[final]
-        else:
-            config_items.append((key, value))
-    config_values = nested_dict_from_items(config_items)
+    default_paths = [
+        path for path, value in nested_dict_items(value_dump) if value is DefaultValue
+    ]
+    for path in default_paths:
+        nested_dict_drop(model_dump, path, inplace=True)
+        nested_dict_drop(value_dump, path, inplace=True)
 
     merged_config = merge_nested_dicts(
-        cast(FlexibleConfig, model_dump),
-        cast(FlexibleConfig, config_values),
+        model_dump,
+        value_dump,
         overwrite=True,
     )
     return model.model_validate(merged_config)
