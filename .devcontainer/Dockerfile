@@ -26,8 +26,9 @@ FROM base as devcontainer
 RUN mkdir /uv && chmod 777 /uv
 ENV UV_PROJECT_ENVIRONMENT='/uv/venv' \
     UV_PYTHON_BIN_DIR="/uv/python" \
+    UV_TOOL_BIN_DIR=/uv/tools/ \
     VIRTUAL_ENV='/uv/venv' \
-    PATH="/uv/venv/bin:${PATH}:/uv/python" \
+    PATH="/uv/venv/bin:/uv/tools/:${PATH}:/uv/python" \
     # For the devcontainer, the cache can live inside the devcontainer for convenience
     UV_CACHE_DIR="/uv/cache"
 
@@ -35,7 +36,8 @@ USER ubuntu
 WORKDIR /workdir
 
 # Install a bunch of Python versions for convenience
-RUN uv python install 3.10 3.11 3.12 3.13 3.14
+RUN uv python install --no-cache 3.10 3.11 3.12 3.13 3.14
+RUN uv tool install --no-cache prek
 
 # Install current project dependencies
 RUN --mount=type=bind,source=uv.lock,target=uv.lock \

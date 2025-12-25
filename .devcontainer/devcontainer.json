@@ -7,7 +7,8 @@
     ],
   },
   "runArgs": [
-    "--shm-size=256m"
+    "--shm-size=256m",
+    "--network=host"
   ],
   "containerUser": "ubuntu",
   "workspaceFolder": "/workdir",
@@ -16,7 +17,7 @@
     "type=bind,source=${localEnv:HOME}/.ssh,target=/home/ubuntu/.ssh,readonly",
     "type=bind,source=${localEnv:HOME}/Downloads,target=/home/ubuntu/Downloads",
   ],
-  "postCreateCommand": "uv sync --frozen --all-groups --all-extras",
+  "postCreateCommand": "uv sync --frozen --all-groups --all-extras; prek install-hooks",
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
