@@ -4,7 +4,7 @@ import itertools
 import types
 import typing
 from collections.abc import Hashable, Iterable
-from typing import Any, Literal, TypeVar, cast, overload
+from typing import Any, Literal, TypeVar, overload
 
 import more_itertools
 import pydantic
@@ -12,12 +12,10 @@ import pydantic
 from pydantic_sweep._utils import (
     _flexible_config_to_nested,
     as_hashable,
-    items_skip,
     iter_subtypes,
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_drop,
-    nested_dict_from_items,
     nested_dict_get,
     nested_dict_items,
     nested_dict_replace,
@@ -255,16 +253,6 @@ def check_model(
                     to_check.append(((*path, name), sub_type))  # noqa: PERF401
 
 
-def _config_prune_default(config: Config) -> Config:
-    """Prune default value placeholders from a config.
-
-    This allows pydantic to handle initialization of them.
-    """
-    items = nested_dict_items(cast(FlexibleConfig, config))
-    items = items_skip(items, target=DefaultValue)
-    return nested_dict_from_items(items)
-
-
 @overload
 def initialize(
     model: type[BaseModelT],
@@ -308,8 +296,8 @@ def initialize(
     model: type[BaseModelT],
     configs: Iterable[Config],
     *,
-    constant: FlexibleConfig | None = None,
-    default: FlexibleConfig | None = None,
+    constant: FlexibleConfig | Config | None = None,
+    default: FlexibleConfig | Config | None = None,
     to: Path | None = None,
     at: Path | None = None,
     check: bool = True,
@@ -346,14 +334,14 @@ def initialize(
         check_model(model, unhashable="ignore")
 
     if constant is not None:
-        if not isinstance(constant, dict):
-            raise TypeError(
-                f"Expected dictionary for input 'constant', got '{type(constant)}'."
-            )
-        configs = config_product(configs, [_flexible_config_to_nested(constant)])
+        constant = _flexible_config_to_nested(constant)
+        configs = config_product(configs, [constant])
 
-    # Remove placeholders now
-    configs = [_config_prune_default(config) for config in configs]
+    # Remove placeholders beforce merging with default values, otherwise we end up
+    # overwriting actual values in `default` with DefaultValue from the configs
+    configs = [
+        _flexible_config_to_nested(config, skip=DefaultValue) for config in configs
+    ]
 
     if default is not None:
         if not isinstance(default, dict):
@@ -361,30 +349,25 @@ def initialize(
                 f"Expected dictionary for input 'default', got '{type(default)}'."
             )
         # A DefaultValue as a default should not change anything
-        default_config = _flexible_config_to_nested(default, skip=DefaultValue)
+        default = _flexible_config_to_nested(default, skip=DefaultValue)
         configs = [
-            merge_nested_dicts(
-                cast(FlexibleConfig, default_config),
-                cast(FlexibleConfig, param),
-                overwrite=True,
-            )
-            for param in configs
+            merge_nested_dicts(default, config, overwrite=True) for config in configs
         ]
 
     # Initialize a subconfiguration at the path ``at``
     if at is not None:
         if to is not None:
-            raise ValueError("Only on of `path` and `at` can be provided, not both.")
+            raise ValueError("Only on of `to` and `at` can be provided, not both.")
 
         subconfigs = [nested_dict_get(param, at, leaf=False) for param in configs]
         submodels = initialize(model, subconfigs)
         return [
-            nested_dict_replace(param, path=at, value=submodel)
+            nested_dict_replace(param, path=at, value=submodel, inplace=False)
             for param, submodel in zip(configs, submodels)
         ]
 
     # Initialize the provided models
-    models = [model(**config) for config in configs]
+    models = [model.model_validate(config) for config in configs]
 
     if to is not None:
         # Check not needed here: values are all pydantic.BaseModel by design
