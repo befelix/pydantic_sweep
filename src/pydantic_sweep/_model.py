@@ -394,25 +394,20 @@ def model_replace(model: BaseModelT, *, values: FlexibleConfig) -> BaseModelT:
     -------
     A new instance of the model with the fields replaced.
     """
-    if not isinstance(values, dict):
-        raise TypeError(
-            f"Expected dictionary for input 'values', got '{type(values)}'."
-        )
-
     # Check for conflicts
-    value_dump = _flexible_config_to_nested(values)
+    values = _flexible_config_to_nested(values)
     model_dump = model.model_dump()
 
     # We remove any paths with DefaultValue both from the model dump and values,
     # so that pydantic uses whatever was the default.
     default_paths = [
-        path for path, value in nested_dict_items(value_dump) if value is DefaultValue
+        path for path, value in nested_dict_items(values) if value is DefaultValue
     ]
     for path in default_paths:
         nested_dict_drop(model_dump, path, inplace=True)
-        nested_dict_drop(value_dump, path, inplace=True)
+        nested_dict_drop(values, path, inplace=True)
 
-    merged_config = merge_nested_dicts(model_dump, value_dump, overwrite=True)
+    merged_config = merge_nested_dicts(model_dump, values, overwrite=True)
     return model.model_validate(merged_config)
 
 
