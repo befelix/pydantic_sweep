@@ -48,7 +48,3 @@ class Chainer(Protocol[T]):
     """A function that chains iterables together."""
 
     def __call__(self, *configs: Iterable[T]) -> Iterable[T]: ...
-
-
-BaseModelT = TypeVar("BaseModelT", bound=pydantic.BaseModel)
-"""TypeVar for a pydantic BaseModel."""
