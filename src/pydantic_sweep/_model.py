@@ -27,6 +27,7 @@ from pydantic_sweep._utils import (
     raise_warn_ignore,
 )
 from pydantic_sweep.types import (
+    BaseModelT,
     Chainer,
     Combiner,
     Config,
@@ -52,9 +53,6 @@ __all__ = [
 ]
 
 T = TypeVar("T")
-
-BaseModelT = TypeVar("BaseModelT", bound=pydantic.BaseModel)
-"""TypeVar for a pydantic BaseModel."""
 
 
 class BaseModel(

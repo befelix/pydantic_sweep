@@ -35,6 +35,9 @@ Config: TypeAlias = dict[str, Union["FieldValue", "Config"]]
 FlexibleConfig: TypeAlias = dict["Path", Union["FieldValue", "FlexibleConfig"]]
 """A flexible config that allows any Path."""
 
+BaseModelT = TypeVar("BaseModelT", bound=pydantic.BaseModel)
+"""TypeVar for a pydantic BaseModel."""
+
 T = TypeVar("T")
 
 
