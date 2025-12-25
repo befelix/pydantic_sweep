@@ -26,21 +26,21 @@ pprint.pp(m)
 
 # %% [markdown]
 """
-That is, by default `pydantic` ignores extra arguments and doesn't validate 
-assignments after the initialization phase. Both of these can be changed in the 
+That is, by default `pydantic` ignores extra arguments and doesn't validate
+assignments after the initialization phase. Both of these can be changed in the
 configuration. In particular, {py:class}`pydantic_sweep.BaseModel` configures
 
 * `extra="forbid"` to raise errors upon additional, mistyped arguments
-* `validate_assignment=True` to run validation on assignment to already initialized 
-  models. 
+* `validate_assignment=True` to run validation on assignment to already initialized
+  models.
 
-While we check for these settings as part of our {any}`check_model` and 
-{any}`initialize` methods, these checks are not exhaustive and it may be possible to 
+While we check for these settings as part of our {any}`check_model` and
+{any}`initialize` methods, these checks are not exhaustive and it may be possible to
 induce unexpected behaviors.
 
 ## Model Unions
 
-As mentioned in {doc}`nested`, `pydantic`'s default behavior for matching submodels 
+As mentioned in {doc}`nested`, `pydantic`'s default behavior for matching submodels
 allows for ambiguity when partial data could match multiple models:
 """
 
@@ -65,17 +65,17 @@ pprint.pp(Model2(sub=dict(x=1)))
 
 # %% [markdown]
 """
-For the purpose of configuration, this automatic model selection is undesired. To 
+For the purpose of configuration, this automatic model selection is undesired. To
 avoid this kind of unsafe behavior, {any}`pydantic_sweep.BaseModel` includes a custom
 [model_validator](https://docs.pydantic.dev/latest/concepts/validators/#model-before
--validator) that makes sure only one of the models matches. Other validations are 
+-validator) that makes sure only one of the models matches. Other validations are
 left to the core `pydantic` code.
 
 ## Leaf values
 
-In general, `pydantic` allows arbitrary leaf values within the notebook. This 
-includes mutable objects such as dictionaries and lists. For the purpose of 
-configuring experiments, it is strongly encouraged to only use immutable types. With 
+In general, `pydantic` allows arbitrary leaf values within the notebook. This
+includes mutable objects such as dictionaries and lists. For the purpose of
+configuring experiments, it is strongly encouraged to only use immutable types. With
 mutable objects, it is too easy to accidentally share state across different pydantic
 models and thereby induce unexpected behaviors.
 

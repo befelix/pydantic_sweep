@@ -1,7 +1,7 @@
 # pydantic-sweep
 
-`pydantic_sweep` is a library to programmatically, safely and flexibly define 
-complex parameter sweeps over `pydantic` models in Python. 
+`pydantic_sweep` is a library to programmatically, safely and flexibly define
+complex parameter sweeps over `pydantic` models in Python.
 
 ![PyPI - Version](https://img.shields.io/pypi/v/pydantic-sweep)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pydantic_sweep)
@@ -15,8 +15,8 @@ complex parameter sweeps over `pydantic` models in Python.
 - `pydantic` field validation
 - Conversion between json/yaml/python code representation of models
 
-For example, the following code will instantiate models with `(x=5, sub=Sub1(s=1)` and 
-`(x=6, sub=Sub1(s=2)` and try each of those with seed values of `seed=43` and 
+For example, the following code will instantiate models with `(x=5, sub=Sub1(s=1)` and
+`(x=6, sub=Sub1(s=2)` and try each of those with seed values of `seed=43` and
 `seed=44`, leading to four different configurations:
 
 ```python
@@ -48,9 +48,9 @@ models = ps.initialize(Model, configs)
 # The code above is equivalent to
 models_manual = [
     Model(seed=43, sub=Sub1(s=1)),
-    Model(seed=43, x=6, sub=Sub1(s=2)), 
+    Model(seed=43, x=6, sub=Sub1(s=2)),
     Model(seed=44, sub=Sub1(s=1)),
-    Model(seed=44, x=6, sub=Sub1(s=2)), 
+    Model(seed=44, x=6, sub=Sub1(s=2)),
 ]
 assert models == models_manual
 
@@ -58,8 +58,8 @@ assert models == models_manual
 ps.check_unique(models)
 ```
 
-While in this toy example, manually specifying the combinations may still be viable, 
-the library allows infinitely combining different configs and sub-models, making it 
+While in this toy example, manually specifying the combinations may still be viable,
+the library allows infinitely combining different configs and sub-models, making it
 a powerful tool for large-scale experiment definition.
 To learn mode about the capabilities of the library please visit the
 [documentation page](https://pydantic-sweep.readthedocs.io).
@@ -74,15 +74,15 @@ pip install 'pydantic-sweep'
 
 ## License
 
-The main code-base is licensed under MPL-2.0 a weak copy-left license that allows 
-commercial use. See the 
-[license file](https://github.com/befelix/pydantic_sweep/blob/main/docs/LICENSE) for 
+The main code-base is licensed under MPL-2.0 a weak copy-left license that allows
+commercial use. See the
+[license file](https://github.com/befelix/pydantic_sweep/blob/main/docs/LICENSE) for
 the exact clauses and
 [this FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) for a high-level description.
 
 An exception from this are the documentation in the `docs` and `example` folders  as
 well as this `README` file, which are licensed under the
-[0BSD](https://github.com/befelix/pydantic_sweep/blob/main/docs/LICENSE): a highly 
-permissive license that does not require attribution. That way, you are free to copy & 
-paste example code into your use-case. See 
+[0BSD](https://github.com/befelix/pydantic_sweep/blob/main/docs/LICENSE): a highly
+permissive license that does not require attribution. That way, you are free to copy &
+paste example code into your use-case. See
 [here](https://choosealicense.com/licenses/0bsd/) for a high-level description.

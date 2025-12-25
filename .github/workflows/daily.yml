@@ -23,7 +23,7 @@ jobs:
       with:
         version: "~=0.9.2"
         enable-cache: false
-    
+
     - name: Extract latest pydantic version
       run: |
         PYDANTIC_SWEEP_VERSION=$(uvx --python ${{ matrix.python_version }}  --with pydantic-sweep python -c 'from importlib.metadata import version; print(version("pydantic-sweep"))')

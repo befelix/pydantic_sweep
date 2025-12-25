@@ -64,8 +64,8 @@ mlp_configs = ps.initialize(
 
 # %% [markdown]
 """
-Next, we configure the main method. We want reproducible results, so we will fix the 
-random seeds to random values, using the {any}`random_seeds` convenience method. In 
+Next, we configure the main method. We want reproducible results, so we will fix the
+random seeds to random values, using the {any}`random_seeds` convenience method. In
 addition, we want to try smaller learning rates for the LSTM networks and larger ones
 for the MLPs.
 """
@@ -95,11 +95,11 @@ pprint.pp(models)
 
 # %% [markdown]
 """
-This yields a surprisingly complex configuration specification. Each of these models 
+This yields a surprisingly complex configuration specification. Each of these models
 can now be passed to the experiment and consequently evaluated.
 
-This marks the end of the tutorial. If you have any questions please open 
-[an issue](https://github.com/befelix/pydantic_sweep/issues) on the project's Github 
-page. Please also do this, if you find functionality missing or discover bugs. PRs 
+This marks the end of the tutorial. If you have any questions please open
+[an issue](https://github.com/befelix/pydantic_sweep/issues) on the project's Github
+page. Please also do this, if you find functionality missing or discover bugs. PRs
 are also always welcome.
 """

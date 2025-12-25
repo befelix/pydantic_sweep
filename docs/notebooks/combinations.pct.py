@@ -32,7 +32,7 @@ pprint.pp(configs, width=45)
 # %% [markdown]
 """
 This combines the two individual configurations together and creates a product of all
-possible inputs. Like all the `ps.config_*` functions, we can provide an arbitrary 
+possible inputs. Like all the `ps.config_*` functions, we can provide an arbitrary
 number of input configurations to this function.
 """
 
@@ -42,8 +42,8 @@ pprint.pp(configs, width=45)
 
 # %% [markdown]
 """
-More importantly, the output of these functions is yet again a valid input, 
-which means that we can nest these call infinitely in order to create complex 
+More importantly, the output of these functions is yet again a valid input,
+which means that we can nest these call infinitely in order to create complex
 configurations. That is, equivalently to the call above we could have executed
 """
 
@@ -54,7 +54,7 @@ pprint.pp(configs, width=45)
 # %% [markdown]
 """
 This becomes interesting once we use other functions beyond the product. The
-{any}`config_zip` function works similar to the builtin `zip` function and merges 
+{any}`config_zip` function works similar to the builtin `zip` function and merges
 the incoming configurations:
 """
 # %%
@@ -63,7 +63,7 @@ pprint.pp(configs, width=45)
 
 # %% [markdown]
 """
-The {any}`config_chain` and {any}`config_roundrobin` functions instead chain the 
+The {any}`config_chain` and {any}`config_roundrobin` functions instead chain the
 input configurations behind each other, the former in the order provided while the
 latter operates in a round-robin way taking configurations in turn:
 """
@@ -98,9 +98,9 @@ these with all possible `zs` values, resulting in a complex configuration.
 """
 ## Custom combination functions
 
-A key feature of the `ps.config_*` functions is that they extend Python 
-builtins from the {py:mod}`itertools` package to operate on 
-nested dictionaries instead and merge them in safe ways. This makes it impossible to 
+A key feature of the `ps.config_*` functions is that they extend Python
+builtins from the {py:mod}`itertools` package to operate on
+nested dictionaries instead and merge them in safe ways. This makes it impossible to
 create conflicting configurations by accident:
 - {any}`config_product` is the equivalent of {py:func}`itertools.product`
 - {any}`config_zip` is the equivalent of the builtin {py:func}`zip` function
@@ -125,7 +125,7 @@ pprint.pp(configs, width=45)
 ## Error checking
 
 While nested combinations are flexible, it is also easy to accidentally overwrite the
-same value twice. To avoid this, `pydantic_sweep` includes built-in error checking. 
+same value twice. To avoid this, `pydantic_sweep` includes built-in error checking.
 For example, in the following we accidentally assign values to `x` twice, leading to
 an exception.
 """
