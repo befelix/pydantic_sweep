@@ -9,10 +9,8 @@ from typing import Any, Literal, TypeVar, overload
 import more_itertools
 import pydantic
 
-from pydantic_sweep._utils import (
+from pydantic_sweep._nested_dict import (
     _flexible_config_to_nested,
-    as_hashable,
-    iter_subtypes,
     merge_nested_dicts,
     nested_dict_at,
     nested_dict_drop,
@@ -20,8 +18,12 @@ from pydantic_sweep._utils import (
     nested_dict_items,
     nested_dict_replace,
     normalize_path,
-    notebook_link,
     path_to_str,
+)
+from pydantic_sweep._utils import (
+    as_hashable,
+    iter_subtypes,
+    notebook_link,
     raise_warn_ignore,
 )
 from pydantic_sweep.types import (
@@ -390,8 +392,7 @@ def model_replace(model: BaseModelT, *, values: FlexibleConfig) -> BaseModelT:
 
     Returns
     -------
-    BaseModelT:
-        A new instance of the model with the fields replaced.
+    A new instance of the model with the fields replaced.
     """
     if not isinstance(values, dict):
         raise TypeError(
@@ -411,11 +412,7 @@ def model_replace(model: BaseModelT, *, values: FlexibleConfig) -> BaseModelT:
         nested_dict_drop(model_dump, path, inplace=True)
         nested_dict_drop(value_dump, path, inplace=True)
 
-    merged_config = merge_nested_dicts(
-        model_dump,
-        value_dump,
-        overwrite=True,
-    )
+    merged_config = merge_nested_dicts(model_dump, value_dump, overwrite=True)
     return model.model_validate(merged_config)
 
 

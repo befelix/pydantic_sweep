@@ -35,6 +35,9 @@ Config: TypeAlias = dict[str, Union["FieldValue", "Config"]]
 FlexibleConfig: TypeAlias = dict["Path", Union["FieldValue", "FlexibleConfig"]]
 """A flexible config that allows any Path."""
 
+BaseModelT = TypeVar("BaseModelT", bound=pydantic.BaseModel)
+"""TypeVar for a pydantic BaseModel."""
+
 T = TypeVar("T")
 
 
@@ -48,7 +51,3 @@ class Chainer(Protocol[T]):
     """A function that chains iterables together."""
 
     def __call__(self, *configs: Iterable[T]) -> Iterable[T]: ...
-
-
-BaseModelT = TypeVar("BaseModelT", bound=pydantic.BaseModel)
-"""TypeVar for a pydantic BaseModel."""

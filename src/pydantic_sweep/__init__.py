@@ -15,7 +15,8 @@ from ._model import (
     initialize,
     model_replace,
 )
-from ._utils import as_hashable, model_diff, random_seeds
+from ._model_diff import model_diff
+from ._utils import as_hashable, random_seeds
 
 __version__ = version("pydantic-sweep")
 del version

@@ -1416,11 +1416,12 @@ wheels = [
 
 [[package]]
 name = "pydantic-sweep"
-version = "0.3.6"
+version = "0.3.7"
 source = { editable = "." }
 dependencies = [
     { name = "more-itertools" },
     { name = "pydantic" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "tomli-w" },
 ]
 
@@ -1451,7 +1452,6 @@ doc = [
     { name = "sphinx-autobuild", version = "2025.8.25", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "sphinx-copybutton" },
     { name = "sphinx-rtd-theme" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 
 [package.metadata]
@@ -1459,6 +1459,7 @@ requires-dist = [
     { name = "more-itertools", specifier = "~=10.1" },
     { name = "pydantic", specifier = "~=2.5" },
     { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=5.0.0" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "tomli-w", specifier = ">=1.0,<2" },
 ]
 provides-extras = ["yaml"]
@@ -1482,7 +1483,6 @@ doc = [
     { name = "sphinx-autobuild", specifier = ">=2024.10.3" },
     { name = "sphinx-copybutton", specifier = ">=0.5.2" },
     { name = "sphinx-rtd-theme", specifier = ">=3.0.2" },
-    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
 ]
 
 [[package]]
