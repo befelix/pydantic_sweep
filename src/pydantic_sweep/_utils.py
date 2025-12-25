@@ -165,18 +165,57 @@ def nested_dict_get(
 def nested_dict_replace(
     d: Config, /, path: Path, value: FieldValue, *, inplace: bool = False
 ) -> Config:
-    """Replace the value of a nested dict at a certain path (out of place)."""
+    """Replace the value of a nested dict at a certain path (out of place).
+
+    Parameters
+    ----------
+    d :
+        The dictionary to replace the value in.
+    path :
+        The path to the key to replace.
+    value :
+        The new value to set at the path.
+    inplace :
+        If ``True``, modify the input dictionary inplace. Otherwise, return a new
+        dictionary with the value replaced.
+    """
     if not inplace:
         d = copy.deepcopy(d)
 
     *subpath, key = normalize_path(path)
-
     sub = nested_dict_get(d, path=subpath, leaf=False)
 
     if key not in sub:
         raise KeyError(f"The path '{path_to_str(path)}' is not part of the dictionary.")
     else:
         sub[key] = value
+
+    return d
+
+
+def nested_dict_drop(d: Config, /, path: Path, *, inplace: bool = False) -> Config:
+    """Remove a key from a nested dict at a certain path.
+
+    Parameters
+    ----------
+    d :
+        The dictionary to remove the key from.
+    path :
+        The path to the key to remove.
+    inplace :
+        If ``True``, modify the input dictionary inplace. Otherwise, return a new
+        dictionary with the key removed.
+    """
+    if not inplace:
+        d = copy.deepcopy(d)
+
+    *subpath, key = normalize_path(path)
+    sub = nested_dict_get(d, path=subpath, leaf=False)
+
+    if key not in sub:
+        raise KeyError(f"The path '{path_to_str(path)}' is not part of the dictionary.")
+    else:
+        del sub[key]
 
     return d
 
@@ -232,7 +271,7 @@ def nested_dict_from_items(
 
 
 def _nested_dict_items(
-    d: FlexibleConfig, /, path: StrictPath
+    d: FlexibleConfig | Config, /, path: StrictPath
 ) -> Iterator[tuple[StrictPath, FieldValue]]:
     """See nested_dict_items"""
     if not isinstance(d, dict):
@@ -245,7 +284,9 @@ def _nested_dict_items(
             yield cur_path, value
 
 
-def nested_dict_items(d: FlexibleConfig, /) -> Iterator[tuple[StrictPath, FieldValue]]:
+def nested_dict_items(
+    d: FlexibleConfig | Config, /
+) -> Iterator[tuple[StrictPath, FieldValue]]:
     """Yield paths and leaf values of a nested dictionary.
 
     Note: This function has special handling for Paths, i.e., it will expand
@@ -257,7 +298,9 @@ def nested_dict_items(d: FlexibleConfig, /) -> Iterator[tuple[StrictPath, FieldV
     return _nested_dict_items(d, path=())
 
 
-def merge_nested_dicts(*dicts: FlexibleConfig, overwrite: bool = False) -> Config:
+def merge_nested_dicts(
+    *dicts: FlexibleConfig | Config, overwrite: bool = False
+) -> Config:
     """Merge multiple Config dictionaries into a single one.
 
     This function includes error checking for duplicate keys and accidental overwriting
@@ -279,10 +322,10 @@ def merge_nested_dicts(*dicts: FlexibleConfig, overwrite: bool = False) -> Confi
         for path, value in nested_dict_items(d):
             node: dict = res
             *subpath, final = path
-            for p in subpath:
-                if p not in node or not isinstance(node[p], dict):
-                    node[p] = dict()
-                node = node[p]
+            for key in subpath:
+                if key not in node or not isinstance(node[key], dict):
+                    node[key] = dict()
+                node = node[key]
             node[final] = value
 
     return res
@@ -293,7 +336,7 @@ class _NoSkip:
 
 
 def _flexible_config_to_nested(
-    config: FlexibleConfig, /, skip: Any = _NoSkip
+    config: FlexibleConfig | Config, /, skip: Any = _NoSkip
 ) -> Config:
     """Normalize a flexible config to a nested dictionary."""
     items = nested_dict_items(config)

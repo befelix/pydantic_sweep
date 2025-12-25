@@ -681,9 +681,17 @@ class TestModelReplace:
         assert b1 == b
         assert b1 is not b
 
-        # conflicts
+    def test_conflicts(self):
+        class A(BaseModel):
+            x: int = 0
+            y: int = 0
+
+        class B(BaseModel):
+            a: A = A()
+
         b = B(a=A(x=1, y=2))
-        b1 = model_replace(b, values={"a.x": DefaultValue, "a": DefaultValue})
-        assert b1 == B()
-        b1 = model_replace(b, values={"a": DefaultValue, "a.x": DefaultValue})
-        assert b1 == B()
+        with pytest.raises(ValueError):
+            model_replace(b, values={"a.x": DefaultValue, "a": DefaultValue})
+
+        with pytest.raises(ValueError):
+            model_replace(b, values={"a": DefaultValue, "a.x": DefaultValue})
