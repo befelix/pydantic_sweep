@@ -274,8 +274,6 @@ def _nested_dict_items(
     d: FlexibleConfig | Config, /, path: StrictPath
 ) -> Iterator[tuple[StrictPath, FieldValue]]:
     """See nested_dict_items"""
-    if not isinstance(d, dict):
-        raise ValueError(f"Expected a dictionary, got {d} of type {type(d)}.")
     for subkey, value in d.items():
         cur_path = (*path, *normalize_path(subkey))
         if isinstance(value, dict):
@@ -295,6 +293,8 @@ def nested_dict_items(
     >>> list(nested_dict_items(dict(a=dict(b=3), c=2)))
     [(('a', 'b'), 3), (('c',), 2)]
     """
+    if not isinstance(d, dict):
+        raise TypeError(f"Expected a dictionary, got {d} of type {type(d)}.")
     return _nested_dict_items(d, path=())
 
 
