@@ -8,6 +8,21 @@ env:
   UV_LINK_MODE: "symlink"
 
 jobs:
+  lint:
+    name: "lint"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "~=0.9.2"
+
+      - name: Prek
+        run: uvx prek run --all-files
+
   linux-low:
     name: "linux-low"
     runs-on: ubuntu-latest
@@ -37,14 +52,8 @@ jobs:
         with:
           version: "~=0.9.2"
 
-      - name: Ruff
-        run: |
-          uv run ruff format --check
-          uv run ruff check
-
       - name: Mypy
         run: uv run mypy
-
 
       - name: Pytest
         run: uv run pytest --cov-fail-under=90

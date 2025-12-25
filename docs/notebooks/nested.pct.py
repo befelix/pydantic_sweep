@@ -43,14 +43,14 @@ except pydantic.ValidationError as e:
 
 # %% [markdown]
 """
-Here the `method.x` value can match either `Method1` or `Method2`. As suggested by 
-the error, to avoid this behavior either we need to make it explicit which model we 
+Here the `method.x` value can match either `Method1` or `Method2`. As suggested by
+the error, to avoid this behavior either we need to make it explicit which model we
 want to use. `pydantic` offers a way to do this through [discriminated unions](
-https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions). 
-Alternatively, we can directly initialize the sub-models individually. The 
+https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions).
+Alternatively, we can directly initialize the sub-models individually. The
 {any}`initialize` method provides two ways to do this via the `at` and `to` keyword
 arguments.
- 
+
 The `to` keyword is a shortcut to the following code, which first instantiates a
 `Method1` model and then passes the models as input to the `field` method.
 """
@@ -71,7 +71,7 @@ pprint.pp(ps.initialize(Environment, configs_m1))
 
 # %% [markdown]
 """
-Alternatively, we can directly create parameters using the full `method.x` path, 
+Alternatively, we can directly create parameters using the full `method.x` path,
 and then initialize a model `at` the respective field.
 """
 
@@ -82,11 +82,11 @@ pprint.pp(ps.initialize(Environment, configs_m2))
 
 # %% [markdown]
 """
-Which of the two methods ends up being more convenient depends on the use-case. Note 
-that this kind of manual instantiation is only required when the submodel type is 
+Which of the two methods ends up being more convenient depends on the use-case. Note
+that this kind of manual instantiation is only required when the submodel type is
 ambiguous. Otherwise, one can rely on the usual pydantic initialization logic.
 
-The individual configurations can, of course, be then combined again to yield more 
+The individual configurations can, of course, be then combined again to yield more
 complex configurations:
 """
 
@@ -103,6 +103,6 @@ pprint.pp(models)
 
 # %% [markdown]
 """
-Next, we will give some details on the model class, before giving a final, 
+Next, we will give some details on the model class, before giving a final,
 full-fledged example in {doc}`example`.
 """

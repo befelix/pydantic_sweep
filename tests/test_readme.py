@@ -17,7 +17,7 @@ def extract_python_code(markdown_text):
 def test_extract_markdown():
     FUN1 = """\
  def hello():
-    print("hi")   
+    print("hi")
 """
     FUN2 = """\
 x = 10

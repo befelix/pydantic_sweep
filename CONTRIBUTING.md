@@ -1,6 +1,6 @@
 # Contributing
 
-The project uses [uv](https://docs.astral.sh/uv/) for its basic setup, 
+The project uses [uv](https://docs.astral.sh/uv/) for its basic setup,
 [ruff](https://docs.astral.sh/ruff) for code-formatting, and
 [mypy](https://mypy.readthedocs.io/) for type checks and
 [sphinx](https://www.sphinx-doc.org/) for the documentation.

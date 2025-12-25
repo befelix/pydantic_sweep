@@ -25,7 +25,7 @@ Path: TypeAlias = Union[str, Iterable[str], "StrictPath"]
 FieldValue: TypeAlias = Hashable | pydantic.BaseModel
 """The possible values that should be assigned to a field.
 
-Fields should be hashable (and therefore immutable) values. That makes them safer to 
+Fields should be hashable (and therefore immutable) values. That makes them safer to
 use in a configuration, since unlike mutable types they can not be modified inplace.
 """
 
