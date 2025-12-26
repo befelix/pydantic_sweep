@@ -5,6 +5,11 @@ This page summarizes historic changes in the library. Please also see the
 
 ## 0.3
 
+### 0.3.8
+
+- Improved error messages
+- Basic CLI Interface added
+
 ### 0.3.7
 
 - Support Python 3.14

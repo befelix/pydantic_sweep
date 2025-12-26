@@ -53,24 +53,17 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "more_itertools": ("https://more-itertools.readthedocs.io/en/stable", None),
-    "pydantic": ("https://docs.pydantic.dev/latest/", None),
+    "pydantic": ("https://docs.pydantic.dev/latest", None),
 }
 
+nitpick_ignore_regex = [
+    (r"py:(class|obj)", "T"),
+    # Custom types are not found by sphinx
+    (r"py:(class|obj|type)", r"^pydantic_sweep\.types\..*"),
+]
 nitpick_ignore = [
-    ("py:class", "collections.abc.Iterable"),
-    ("py:obj", "pydantic.BaseModel"),
-    ("py:class", "pydantic.BaseModel"),
-    ("py:class", "T"),
-    ("py:obj", "T"),
     ("py:class", "Ellipsis"),
-    # These are somehow not found
-    ("py:class", "pydantic_sweep.types.Config"),
-    ("py:class", "pydantic_sweep.types.Path"),
-    ("py:class", "pydantic_sweep.types.StrictPath"),
-    ("py:class", "pydantic_sweep.types.FieldValue"),
-    ("py:class", "pydantic_sweep.types.BaseModelT"),
-    ("py:class", "pydantic_sweep.types._FlexibleConfig"),
-    ("py:class", "pydantic_sweep.types.FlexibleConfig"),
+    ("py:class", "pytest.MonkeyPatch"),
 ]
 napoleon_use_rtype = False
 
