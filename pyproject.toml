@@ -46,11 +46,12 @@ build-backend = "uv_build"
 dev = [
     "pydantic_sweep[yaml]",
     "pytest-sugar>=1.0.0",
-    "pytest>=8.3.4",
+    "pytest>=9",
     "pytest-cov>=6.0.0",
     "ruff>=0.8.3",
     "mypy[mypyc]>=1.13.0",
     "ipython>=8.30.0",
+    "types-PyYAML>=5",
 ]
 doc = [
     "myst-parser>=4.0.0",
@@ -66,10 +67,11 @@ doc = [
 [tool.uv]
 default-groups = ["dev"]
 
-[tool.pytest.ini_options]
+[tool.pytest]
+strict = true
 testpaths = ["src", "tests"]
-minversion = 8.3
-addopts = "-p 'no:legacypath' --doctest-modules --cov=src"
+minversion = "9.0"
+addopts = ["-p", "no:legacypath", "--doctest-modules"]
 markers = [
     "repo: Tests that require the repo to be cloned"
 ]
@@ -106,6 +108,10 @@ select = [
     "I", # Sort imports
     "RUF", # Rules from ruff
     "PERF", # Performance issues
+    "PT", # Pytest style
+]
+ignore = [
+    "PT011", # Missing error matches
 ]
 
 [tool.ruff.lint.per-file-ignores]

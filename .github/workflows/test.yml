@@ -56,7 +56,7 @@ jobs:
         run: uv run mypy
 
       - name: Pytest
-        run: uv run pytest --cov-fail-under=90
+        run: uv run pytest --cov=src --cov-fail-under=90
 
       - name: Documentation
         run: |
