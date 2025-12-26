@@ -1,6 +1,6 @@
 from importlib.metadata import version
 
-from . import types
+from . import cli, types
 from ._model import (
     BaseModel,
     DefaultValue,
@@ -28,6 +28,7 @@ __all__ = [
     "as_hashable",
     "check_model",
     "check_unique",
+    "cli",
     "config_chain",
     "config_combine",
     "config_product",

@@ -1,6 +1,6 @@
 # /// script
 # dependencies = [
-#   "pydantic-sweep~=0.3.1"
+#   "pydantic-sweep~=0.3.8"
 # ]
 # ///
 
@@ -11,6 +11,7 @@ from pathlib import Path
 from config import ExperimentConfig
 
 import pydantic_sweep as ps
+from pydantic_sweep.cli import ModelDumpCLI
 
 # Construct experiment configurations
 experiments = ps.initialize(
@@ -30,9 +31,13 @@ ps.check_unique(experiments)
 # Call the script with all experiment configurations
 script = Path(__file__).parent / "train.py"
 for experiment in experiments:
+    # The runner and train script communicate via CLI arguments
+    # pydantic-sweep provides helper functions for basic CLIs.
+    cli_args = ModelDumpCLI.cli_args(experiment)
+
     # Here, were calling subprocess with the current python executable. On a cluster,
     # one would instead schedule the corresponding run.
     subprocess.run(
-        [sys.executable, script, "--json", experiment.model_dump_json()],
+        [sys.executable, str(script), *cli_args],
         check=True,
     )
