@@ -15,7 +15,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.10.12"
+          version: "0.11.3"
 
       - name: Check tag
         shell: bash
