@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS base
+FROM ubuntu:26.04 AS base
 
 RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     --mount=type=cache,target=/var/lib/apt/lists,id=apt-list \
