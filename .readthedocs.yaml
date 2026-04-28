@@ -3,9 +3,17 @@
 version: 2
 
 build:
-  os: ubuntu-24.04
+  os: ubuntu-26.04
   tools:
-    python: "3.13"
-  commands:
-    - python -m pip install 'uv~=0.9.2'
-    - uv run --frozen --group doc -m sphinx --jobs 2 --fail-on-warning -b html docs $READTHEDOCS_OUTPUT/html
+    python: "3.14"
+
+python:
+  install:
+    - method: uv
+      command: sync
+      groups:
+        - doc
+
+sphinx:
+  configuration: docs/conf.py
+  fail_on_warning: true
